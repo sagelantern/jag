@@ -247,6 +247,7 @@ Return ONLY this JSON: {"awareness": "your line here", "buttons": [{"label": "st
   if (config.apiBearerToken) {
     headers['Authorization'] = `Bearer ${config.apiBearerToken}`;
   }
+  headers['x-openclaw-model'] = 'anthropic/claude-sonnet-4-20250514';
 
   const response = await fetch(endpoint, {
     method: 'POST',
@@ -257,7 +258,7 @@ Return ONLY this JSON: {"awareness": "your line here", "buttons": [{"label": "st
       instructions: 'This is a request from the Jag browser extension. Return ONLY valid JSON, nothing else. No markdown fences, no explanation, no preamble. The awareness line must be under 15 words, deeply personal to Yash using your knowledge of his life, and different every time. Reference specific things: his calendar, rituals he has or hasn\'t done today, his son Sohum, his wife Shivantika, meditation, workouts, Kindred, Pioneer Fund. Never be generic or preachy. State facts about his actual life.',
       text: { format: { type: 'text' } }
     }),
-    signal: AbortSignal.timeout(5000)
+    signal: AbortSignal.timeout(20000)
   });
 
   if (!response.ok) throw new Error(`API returned ${response.status}`);
