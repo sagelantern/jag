@@ -57,7 +57,10 @@
   }
 
   function showLoadingOverlay() {
-    if (overlayActive) return;
+    // Remove any existing overlay first
+    const existing = document.getElementById('jag-overlay');
+    if (existing) existing.remove();
+
     overlayActive = true;
     stopIdleMonitoring();
 
