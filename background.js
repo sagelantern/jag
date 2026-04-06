@@ -34,14 +34,14 @@ const DEFAULT_STREAKS = {
 
 // Fallback awareness templates when API is unreachable
 const FALLBACK_TEMPLATES = [
-  "You've opened {site} {count} time(s) in the last {window}. Is this intentional?",
-  "It's {time} on {day}. You're reaching for {site} again. What were you doing before this?",
-  "{count} visits to {site} in {window}. Your streak is {streak} days. Worth protecting?",
-  "Pause. You're about to open {site} for the {count}th time. What do you actually need right now?",
-  "It's {time}. {site} again. The last {count} times didn't give you what you wanted either.",
-  "Your streak: {streak} days. {site} visit #{count} today. You set these rules for a reason.",
-  "{day} {time}. Opening {site}. Is this the version of yourself you're building toward?",
-  "Before you scroll: {count} visits to {site} in {window}. That's {count} interruptions to whatever matters more."
+  "{day}, {time}. {site} again. What were you just doing?",
+  "Visit #{count}. The thing you were avoiding is still there.",
+  "{time}. {site} won't give you what you actually need right now.",
+  "That's {count} times today. Nothing new is waiting for you there.",
+  "{time} on {day}. You opened {site} {count} times already. Walk away.",
+  "The last {count} visits averaged 8 minutes each. That's an hour gone.",
+  "{site}, visit #{count}. Name one thing you'll get from this.",
+  "It's {time}. Close the laptop. Go do the thing."
 ];
 
 // Initialize storage with defaults on install
@@ -141,6 +141,15 @@ function calculateTimer(openCount, buttonType, config, site) {
   return Math.max(seconds, 5); // minimum 5 seconds
 }
 
+function formatTimerLabel(seconds) {
+  if (seconds >= 60) {
+    const min = Math.floor(seconds / 60);
+    const sec = seconds % 60;
+    return sec > 0 ? `${min}m ${sec}s` : `${min}m`;
+  }
+  return `${seconds}s`;
+}
+
 // Generate fallback awareness line
 function generateFallbackAwareness(site, openCount, windowMinutes, streakDays) {
   const now = new Date();
@@ -177,10 +186,15 @@ function generateFallbackButtons(site, openCount, config) {
     });
   }
 
-  // Browse button
-  const browseLabel = openCount >= 4
-    ? `Still want to browse (${openCount}th time)`
-    : 'Just want to browse';
+  // Browse button - honest, escalating label
+  let browseLabel;
+  if (openCount >= 5) {
+    browseLabel = `Open anyway (${formatTimerLabel(baseTimer)} wait)`;
+  } else if (openCount >= 3) {
+    browseLabel = `I know, let me through (${formatTimerLabel(baseTimer)} wait)`;
+  } else {
+    browseLabel = `Let me browse (${formatTimerLabel(baseTimer)} wait)`;
+  }
   buttons.push({
     label: browseLabel,
     type: 'browse',
@@ -189,7 +203,7 @@ function generateFallbackButtons(site, openCount, config) {
 
   // Nevermind always present
   buttons.push({
-    label: 'Nevermind',
+    label: "I don't need this",
     type: 'nevermind',
     timer_seconds: 0
   });
@@ -204,7 +218,13 @@ async function getAwarenessFromAPI(site, openCount, config, streaks) {
   const day = now.toLocaleDateString('en-US', { weekday: 'long' });
   const windowHours = Math.round(config.rollingWindowMinutes / 60 * 10) / 10;
 
-  const prompt = `The user is opening ${site.pattern} for the ${ordinal(openCount)} time in the last ${windowHours} hours. It is ${time} on ${day}. Their streak is ${streaks.current} days (longest ever: ${streaks.longest} days). They've spent ${streaks.dailyMinutes} minutes on flagged sites today (target: under ${config.dailyTargetMinutes} min). The site is categorized as "${site.category}". ${isWorkHours(config) ? 'It is currently work hours.' : 'It is outside work hours.'} ${isPresenceTime(config) ? 'It is currently a designated presence time (family/meditation).' : ''} Generate a single awareness line (1-2 sentences max) that is specific, contextual, and different from previous lines. State facts, don\'t lecture. Also return which buttons to show based on the context. Return as JSON: {"awareness": string, "buttons": [{"label": string, "type": "work"|"browse"|"nevermind", "timer_seconds": number}]}`;
+  const prompt = `Context: The user is opening ${site.pattern} for the ${ordinal(openCount)} time in the last ${windowHours} hours. It is ${time} on ${day}. Their streak is ${streaks.current} days. They've spent ${Math.round(streaks.dailyMinutes)} minutes on distracting sites today (target: under ${config.dailyTargetMinutes} min). ${isWorkHours(config) ? 'It is work hours.' : 'It is outside work hours.'} ${isPresenceTime(config) ? 'It is a designated presence time (family/meditation).' : ''}
+
+Generate ONE short awareness line (1 sentence, max 15 words). Be direct, specific to the moment, and vary your approach. Some options: name what they're avoiding, state the opportunity cost, note the pattern, ask what they actually need. Never use generic phrases like "you set these rules" or "is this intentional." Never lecture.
+
+Also return buttons. "I don't need this" (nevermind, timer 0) is always included. "Let me browse" (browse) is always included with the appropriate timer. Only include "I need this for work" (work) during work hours for sometimes_work sites.
+
+Return as JSON: {"awareness": string, "buttons": [{"label": string, "type": "work"|"browse"|"nevermind", "timer_seconds": number}]}`;
 
   const endpoint = config.apiEndpoint || DEFAULT_CONFIG.apiEndpoint;
   const headers = { 'Content-Type': 'application/json' };
@@ -218,7 +238,7 @@ async function getAwarenessFromAPI(site, openCount, config, streaks) {
     body: JSON.stringify({
       model: 'anthropic/claude-sonnet-4-20250514',
       input: prompt,
-      instructions: 'You are Jag, a mindful browsing assistant. Return ONLY valid JSON, no markdown fences, no extra text. The awareness line should be specific, honest, and non-preachy. Nevermind button should always be included with timer_seconds: 0. Work button should only appear during work hours for sometimes_work sites. Timer seconds should escalate with open count (5, 15, 30, 60, 120 base).',
+      instructions: 'You are Jag. Return ONLY valid JSON. The awareness line must be short (under 15 words), direct, and different every time. Good examples: "Third time in an hour. The run you planned is still waiting." or "4:15 PM. Sohum is awake. Reddit is not going anywhere." Bad examples: "Is this intentional?" or "You set these rules for a reason." Never be generic, preachy, or use questions that can be dismissed with "yes." The nevermind button label should be "I don\'t need this" with timer_seconds 0. The browse button timer_seconds should match the escalating timer for the open count.',
       text: { format: { type: 'text' } }
     }),
     signal: AbortSignal.timeout(5000)

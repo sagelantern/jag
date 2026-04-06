@@ -6,6 +6,8 @@
 
   let overlayActive = false;
   let currentData = null;
+  let idleTimer = null;
+  let lastActivity = Date.now();
 
   // Listen for overlay trigger from background
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -17,9 +19,44 @@
     return false;
   });
 
+  // Track user activity for idle timeout
+  function resetIdleTimer() {
+    lastActivity = Date.now();
+  }
+
+  function startIdleMonitoring() {
+    // Monitor mouse, keyboard, scroll activity
+    ['mousemove', 'keydown', 'scroll', 'click', 'touchstart'].forEach(event => {
+      document.addEventListener(event, resetIdleTimer, { passive: true });
+    });
+
+    // Check every 10 seconds if user has been idle for 60+ seconds
+    idleTimer = setInterval(() => {
+      if (!overlayActive && currentData && (Date.now() - lastActivity) >= 60000) {
+        // User has been idle for 1+ minute on a flagged site, re-trigger overlay
+        chrome.runtime.sendMessage({
+          type: 'JAG_IDLE_RETRIGGER',
+          data: { site: currentData.site, timestamp: Date.now() }
+        });
+        showOverlay(currentData);
+      }
+    }, 10000);
+  }
+
+  function stopIdleMonitoring() {
+    if (idleTimer) {
+      clearInterval(idleTimer);
+      idleTimer = null;
+    }
+    ['mousemove', 'keydown', 'scroll', 'click', 'touchstart'].forEach(event => {
+      document.removeEventListener(event, resetIdleTimer);
+    });
+  }
+
   function showOverlay(data) {
     if (overlayActive) return;
     overlayActive = true;
+    stopIdleMonitoring();
 
     // Create overlay container
     const overlay = document.createElement('div');
@@ -52,7 +89,6 @@
 
   function blockKeys(e) {
     if (overlayActive) {
-      // Block Escape and most keyboard shortcuts while overlay is up
       if (e.key === 'Escape' || (e.ctrlKey && e.key === 'w')) {
         e.preventDefault();
         e.stopPropagation();
@@ -62,9 +98,6 @@
 
   function buildOverlayHTML(data) {
     const { awareness, buttons, streak, openCount, site, windowMinutes } = data;
-    const windowLabel = windowMinutes >= 60
-      ? `${Math.round(windowMinutes / 60)}h`
-      : `${windowMinutes}m`;
 
     return `
       <div class="jag-container">
@@ -76,33 +109,15 @@
           ${escapeHTML(awareness)}
         </div>
 
-        <div class="jag-stats">
-          <div class="jag-stat">
-            <span class="jag-stat-value">${streak.current}</span>
-            <span class="jag-stat-label">day streak</span>
-          </div>
-          <div class="jag-stat-divider"></div>
-          <div class="jag-stat">
-            <span class="jag-stat-value">${streak.longest}</span>
-            <span class="jag-stat-label">longest</span>
-          </div>
-          <div class="jag-stat-divider"></div>
-          <div class="jag-stat">
-            <span class="jag-stat-value">${Math.round(streak.dailyMinutes)}<span class="jag-stat-unit">/${streak.targetMinutes}m</span></span>
-            <span class="jag-stat-label">today</span>
-          </div>
-          <div class="jag-stat-divider"></div>
-          <div class="jag-stat">
-            <span class="jag-stat-value">${openCount}</span>
-            <span class="jag-stat-label">visits (${windowLabel})</span>
-          </div>
+        <div class="jag-meta">
+          Day ${streak.current}${streak.current > 0 ? ' streak' : ''} · Visit #${openCount} today
         </div>
 
         <div class="jag-buttons" id="jag-buttons">
           ${buttons.map((btn, i) => `
             <button class="jag-btn jag-btn-${btn.type}" data-index="${i}" data-type="${btn.type}" data-timer="${btn.timer_seconds}">
               ${escapeHTML(btn.label)}
-              ${btn.timer_seconds > 0 ? `<span class="jag-btn-timer">${btn.timer_seconds}s wait</span>` : ''}
+              ${btn.timer_seconds > 0 ? `<span class="jag-btn-timer">${formatTimer(btn.timer_seconds)} wait</span>` : ''}
             </button>
           `).join('')}
         </div>
@@ -115,6 +130,15 @@
         </div>
       </div>
     `;
+  }
+
+  function formatTimer(seconds) {
+    if (seconds >= 60) {
+      const min = Math.floor(seconds / 60);
+      const sec = seconds % 60;
+      return sec > 0 ? `${min}m ${sec}s` : `${min}m`;
+    }
+    return `${seconds}s`;
   }
 
   function setupButtons(overlay, data) {
@@ -136,8 +160,6 @@
         });
 
         if (type === 'nevermind') {
-          // Tab will be closed by background script
-          // Show brief confirmation
           const container = overlay.querySelector('.jag-container');
           container.innerHTML = `
             <div class="jag-farewell">
@@ -169,7 +191,7 @@
     let remaining = totalSeconds;
 
     function updateTimer() {
-      timerText.textContent = `${remaining}s`;
+      timerText.textContent = formatTimer(remaining);
       const progress = ((totalSeconds - remaining) / totalSeconds) * 100;
       timerBar.style.width = `${progress}%`;
 
@@ -191,6 +213,10 @@
     document.documentElement.style.overflow = '';
     document.body.style.overflow = '';
     overlay.remove();
+
+    // Start idle monitoring after overlay is dismissed
+    lastActivity = Date.now();
+    startIdleMonitoring();
   }
 
   function escapeHTML(str) {

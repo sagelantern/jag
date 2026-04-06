@@ -1,5 +1,5 @@
 /* Jag - Overlay Styles */
-/* Calm, minimal, slightly dark. Firm but not aggressive. */
+/* Calm, minimal, dark. Firm but not aggressive. */
 
 #jag-overlay {
   position: fixed;
@@ -43,57 +43,22 @@
   color: #5a5a7a;
 }
 
-/* Awareness line - the most important element */
+/* Awareness line - the hero element */
 .jag-awareness {
-  font-size: 1.6rem;
-  line-height: 1.5;
+  font-size: 1.8rem;
+  line-height: 1.45;
   font-weight: 400;
   color: #f0f0f0;
-  margin-bottom: 2.5rem;
+  margin-bottom: 1.5rem;
   letter-spacing: -0.01em;
 }
 
-/* Stats row */
-.jag-stats {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1.25rem;
-  margin-bottom: 3rem;
-  flex-wrap: wrap;
-}
-
-.jag-stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.jag-stat-value {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #c8b6ff;
-  font-variant-numeric: tabular-nums;
-}
-
-.jag-stat-unit {
-  font-size: 0.85rem;
-  font-weight: 400;
-  color: #8888aa;
-}
-
-.jag-stat-label {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+/* Secondary meta line - streak + visit count */
+.jag-meta {
+  font-size: 0.8rem;
   color: #6a6a8a;
-}
-
-.jag-stat-divider {
-  width: 1px;
-  height: 2rem;
-  background: #2a2a4a;
+  letter-spacing: 0.05em;
+  margin-bottom: 3rem;
 }
 
 /* Buttons */
@@ -127,14 +92,14 @@
   transform: translateY(0);
 }
 
-/* Nevermind - the hero button, most prominent and attractive */
+/* Nevermind - the hero button, most prominent */
 .jag-btn-nevermind {
   background: linear-gradient(135deg, #c8b6ff 0%, #a78bfa 100%);
   color: #1a1a2e;
   font-weight: 600;
   font-size: 1rem;
   padding: 1rem 1.5rem;
-  order: -1; /* Push to top */
+  order: -1;
 }
 
 .jag-btn-nevermind:hover {
@@ -154,16 +119,17 @@
   color: #c0c0e0;
 }
 
-/* Browse button - least attractive, most friction */
+/* Browse button - least attractive, honest label */
 .jag-btn-browse {
   background: transparent;
-  color: #6a6a8a;
-  border: 1px solid #2a2a4a;
+  color: #555570;
+  border: 1px solid #2a2a3e;
+  font-size: 0.85rem;
 }
 
 .jag-btn-browse:hover {
   background: #22223a;
-  color: #8888aa;
+  color: #7a7a9a;
 }
 
 .jag-btn-timer {
