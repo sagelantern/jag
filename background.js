@@ -308,6 +308,21 @@ async function getAwarenessFromAPI(site, openCount, config, streaks) {
   const day = now.toLocaleDateString('en-US', { weekday: 'long' });
   const windowHours = Math.round(config.rollingWindowMinutes / 60 * 10) / 10;
 
+  // Check if this is an email site — add email context
+  const emailSites = ['mail.google.com', 'superhuman.com', 'outlook.live.com', 'mail.yahoo.com'];
+  const isEmailSite = emailSites.some(e => site.pattern.includes(e));
+  let emailContext = '';
+  if (isEmailSite) {
+    const stored = await chrome.storage.local.get(['lastEmailAccess']);
+    const lastAccess = stored.lastEmailAccess;
+    if (lastAccess) {
+      const minAgo = Math.round((Date.now() - lastAccess) / 60000);
+      emailContext = `\n\nEMAIL CONTEXT: Yash last checked email ${minAgo} minutes ago. Before showing the gatekeeper, CHECK his Gmail (ai@yash-kothari.com) for unread emails from real people (not newsletters/automated) received since ${new Date(lastAccess).toISOString()}. If there are important unread emails, mention them and be more lenient. If nothing new, say so and be strict — he's just compulsively refreshing.`;
+    } else {
+      emailContext = `\n\nEMAIL CONTEXT: No record of when Yash last checked email. CHECK his Gmail (ai@yash-kothari.com) for any important unread emails from real people. If there are some, mention them. If inbox is quiet, say so.`;
+    }
+  }
+
   const prompt = `[JAG BROWSER EXTENSION REQUEST - respond with ONLY JSON, no other text]
 
 Yash just opened ${site.pattern} for the ${ordinal(openCount)} time in the last ${windowHours} hours. It is ${time} on ${day}. His Jag streak is ${streaks.current} days. He's spent ${Math.round(streaks.dailyMinutes)} min on distracting sites today (target: under ${config.dailyTargetMinutes} min). ${isWorkHours(config) ? 'It is work hours.' : 'It is outside work hours.'} ${isPresenceTime(config) ? 'It is a designated presence time (family/meditation).' : ''}
@@ -322,7 +337,7 @@ The line must reference BOTH (a) something real from his life right now AND (b) 
 - Instagram: comparison trap, mindless stories, lives that aren't his
 - HackerNews: intellectual procrastination dressed as staying informed
 
-Make it specific enough that it only makes sense for THIS site at THIS time. Vary your approach every time: sometimes name the pattern, sometimes name what he'd lose, sometimes name what's waiting for him instead. Never repeat yourself. Never be generic or preachy.
+Make it specific enough that it only makes sense for THIS site at THIS time. Vary your approach every time: sometimes name the pattern, sometimes name what he'd lose, sometimes name what's waiting for him instead. Never repeat yourself. Never be generic or preachy.${emailContext}
 
 Also return which buttons to show. Rules:
 - "I don't need this" (type: nevermind, timer_seconds: 0) always included
@@ -596,11 +611,26 @@ async function evaluateReason(data) {
     `${m.role === 'user' ? 'Yash' : 'Jag'}: ${m.text}`
   ).join('\n');
 
+  // Email context for gatekeeper
+  const emailSites = ['mail.google.com', 'superhuman.com', 'outlook.live.com', 'mail.yahoo.com'];
+  const isEmailSite = emailSites.some(e => site.includes(e));
+  let emailGatekeeperContext = '';
+  if (isEmailSite) {
+    const stored = await chrome.storage.local.get(['lastEmailAccess']);
+    const lastAccess = stored.lastEmailAccess;
+    if (lastAccess) {
+      const minAgo = Math.round((Date.now() - lastAccess) / 60000);
+      emailGatekeeperContext = `\nEMAIL INTEL: Yash last checked email ${minAgo} min ago. CHECK his Gmail (ai@yash-kothari.com) for unread emails from real people since ${new Date(lastAccess).toISOString()}. If there ARE important new emails, be more lenient and mention what's waiting. If there's nothing new, be extra strict — he's compulsively refreshing.`;
+    } else {
+      emailGatekeeperContext = `\nEMAIL INTEL: First email check. CHECK Gmail (ai@yash-kothari.com) for important unread emails. Mention findings.`;
+    }
+  }
+
   const prompt = `[JAG GATEKEEPER - respond with ONLY JSON]
 
 Yash wants to open ${site}. It is ${time} on ${day}. Visit #${openCount} today. Streak: ${streak.current} days.
 ${isPresenceTime(config) ? 'IMPORTANT: It is currently a designated presence time (family/meditation). Be VERY strict. Only genuine emergencies pass.' : ''}
-${!isWorkHours(config) ? 'It is outside work hours. Be stricter about "work" excuses.' : 'It is work hours.'}
+${!isWorkHours(config) ? 'It is outside work hours. Be stricter about "work" excuses.' : 'It is work hours.'}${emailGatekeeperContext}
 
 ${recentExcuses ? `RECENT EXCUSES for ${site} (last 7 days):\n${recentExcuses}\n\nIf Yash is using the same or similar excuse repeatedly, call it out. Repeating an excuse doesn't make it more valid.` : ''}
 
@@ -701,5 +731,11 @@ async function handleButtonChoice(choice, tabId) {
   // Start timing if they chose to proceed
   if (choice.buttonType !== 'nevermind' && tabId) {
     activeTimers.set(tabId, { site: choice.site, startTime: Date.now() });
+
+    // Track last successful access for email sites
+    const emailSites = ['mail.google.com', 'superhuman.com', 'outlook.live.com', 'mail.yahoo.com'];
+    if (emailSites.some(e => choice.site.includes(e))) {
+      await chrome.storage.local.set({ lastEmailAccess: Date.now() });
+    }
   }
 }
