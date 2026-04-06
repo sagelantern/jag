@@ -256,7 +256,7 @@ Return ONLY this JSON: {"awareness": "your line here", "buttons": [{"label": "st
       model: 'openclaw',
       input: prompt,
       instructions: 'This is a request from the Jag browser extension. Return ONLY valid JSON, nothing else. No markdown fences, no explanation, no preamble. The awareness line must be under 15 words, deeply personal to Yash using your knowledge of his life, and different every time. Reference specific things: his calendar, rituals he has or hasn\'t done today, his son Sohum, his wife Shivantika, meditation, workouts, Kindred, Pioneer Fund. Never be generic or preachy. State facts about his actual life.',
-      text: { format: { type: 'text' } }
+      stream: false
     }),
     signal: AbortSignal.timeout(20000)
   });
