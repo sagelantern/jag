@@ -21,7 +21,7 @@ const DEFAULT_CONFIG = {
   rollingWindowMinutes: 120,
   dailyTargetMinutes: 30,
   apiEndpoint: 'http://localhost:18789/v1/responses',
-  apiBearerToken: '',
+  apiBearerToken: '0649cd7eea0f60e90ea7d20588659f299e8b291904b5cc59',
   timerBase: [10, 30, 60, 120, 180, 300] // seconds per open count tier (aggressive baseline)
 };
 
@@ -44,15 +44,21 @@ const FALLBACK_TEMPLATES = [
   "It's {time}. Close the laptop. Go do the thing."
 ];
 
-// Initialize storage with defaults on install
+// Initialize storage with defaults on install/update
 chrome.runtime.onInstalled.addListener(async () => {
   const data = await chrome.storage.local.get(['sites', 'config', 'streaks']);
   if (!data.sites) {
     await chrome.storage.local.set({ sites: DEFAULT_SITES });
   }
-  if (!data.config) {
-    await chrome.storage.local.set({ config: DEFAULT_CONFIG });
+  // Always update config to pick up new defaults (like API token), but preserve user edits
+  const existingConfig = data.config || {};
+  const mergedConfig = { ...DEFAULT_CONFIG, ...existingConfig };
+  // Force update token if it was empty (user never set it)
+  if (!existingConfig.apiBearerToken) {
+    mergedConfig.apiBearerToken = DEFAULT_CONFIG.apiBearerToken;
   }
+  await chrome.storage.local.set({ config: mergedConfig });
+
   if (!data.streaks) {
     await chrome.storage.local.set({ streaks: DEFAULT_STREAKS });
   }
@@ -399,7 +405,7 @@ chrome.webNavigation.onCommitted.addListener(async (details) => {
     awareness = apiResult.awareness;
     buttons = apiResult.buttons;
   } catch (err) {
-    console.log('Jag: API unavailable, using fallback:', err.message);
+    console.log('Jag: API unavailable, using fallback. Error:', err.message, 'Token set:', !!config.apiBearerToken, 'Endpoint:', config.apiEndpoint);
     awareness = generateFallbackAwareness(matchedSite.pattern, openCount, config.rollingWindowMinutes, streaks.current);
     buttons = generateFallbackButtons(matchedSite, openCount, config);
   }
