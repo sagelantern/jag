@@ -132,17 +132,6 @@
     }
   }
 
-  // Prevent underlying page from stealing focus
-  function blockFocusSteal(e) {
-    if (overlayActive && e.target && !e.target.closest('#jag-overlay')) {
-      e.stopPropagation();
-      const input = document.querySelector('#jag-input');
-      if (input && !input.disabled) input.focus();
-    }
-  }
-  document.addEventListener('focus', blockFocusSteal, true);
-  document.addEventListener('focusin', blockFocusSteal, true);
-
   function buildOverlayHTML(data) {
     const { awareness, streak, openCount } = data;
 
@@ -179,19 +168,8 @@
     const nevermindBtn = overlay.querySelector('#jag-nevermind');
     const chatDiv = overlay.querySelector('#jag-chat');
 
-    // Focus input - retry multiple times to fight page focus-stealing
-    const focusInput = () => {
-      if (input && !input.disabled) {
-        input.focus();
-      }
-    };
-    setTimeout(focusInput, 100);
-    setTimeout(focusInput, 500);
-    setTimeout(focusInput, 1000);
-    setTimeout(focusInput, 2000);
-
-    // Re-focus when overlay is clicked anywhere
-    overlay.addEventListener('click', () => focusInput());
+    // Focus input
+    setTimeout(() => input && input.focus(), 100);
 
     // Send on Enter
     input.addEventListener('keydown', (e) => {
