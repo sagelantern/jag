@@ -168,11 +168,26 @@
     const nevermindBtn = overlay.querySelector('#jag-nevermind');
     const chatDiv = overlay.querySelector('#jag-chat');
 
-    // Focus input — stagger retries to beat page JS focus-stealing (Gmail etc)
+    // Focus input — stagger retries to beat page JS focus-stealing (Superhuman etc)
     const tryFocus = () => { if (input && !input.disabled && document.activeElement !== input) input.focus(); };
     setTimeout(tryFocus, 100);
     setTimeout(tryFocus, 600);
     setTimeout(tryFocus, 1500);
+    setTimeout(tryFocus, 3000);
+    setTimeout(tryFocus, 5000);
+
+    // For aggressive SPAs (Superhuman), keep reclaiming focus for 10 seconds
+    let focusGuardCount = 0;
+    const focusGuard = setInterval(() => {
+      if (!overlayActive || focusGuardCount > 20 || (input && input.disabled)) {
+        clearInterval(focusGuard);
+        return;
+      }
+      if (document.activeElement !== input && input && !input.disabled) {
+        input.focus();
+      }
+      focusGuardCount++;
+    }, 500);
 
     // Send on Enter
     input.addEventListener('keydown', (e) => {
