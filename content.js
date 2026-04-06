@@ -168,8 +168,11 @@
     const nevermindBtn = overlay.querySelector('#jag-nevermind');
     const chatDiv = overlay.querySelector('#jag-chat');
 
-    // Focus input
-    setTimeout(() => input && input.focus(), 100);
+    // Focus input — stagger retries to beat page JS focus-stealing (Gmail etc)
+    const tryFocus = () => { if (input && !input.disabled && document.activeElement !== input) input.focus(); };
+    setTimeout(tryFocus, 100);
+    setTimeout(tryFocus, 600);
+    setTimeout(tryFocus, 1500);
 
     // Send on Enter
     input.addEventListener('keydown', (e) => {
