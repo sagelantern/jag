@@ -472,6 +472,9 @@ async function stopTiming(tabId) {
 }
 
 // Main navigation handler
+// Track which tabs have an active overlay to prevent re-triggering
+const overlayActiveTabs = new Map(); // tabId -> { site, timestamp }
+
 chrome.webNavigation.onCommitted.addListener(async (details) => {
   // Only handle main frame navigations
   if (details.frameId !== 0) return;
@@ -483,6 +486,13 @@ chrome.webNavigation.onCommitted.addListener(async (details) => {
 
   const matchedSite = matchesFlaggedSite(details.url, sites);
   if (!matchedSite) return;
+
+  // Don't re-trigger if this tab already has an active overlay for the same site (within 30s)
+  const existing = overlayActiveTabs.get(details.tabId);
+  if (existing && existing.site === matchedSite.pattern && (Date.now() - existing.timestamp) < 30000) {
+    return;
+  }
+  overlayActiveTabs.set(details.tabId, { site: matchedSite.pattern, timestamp: Date.now() });
 
   // Update streaks for today
   const streaks = await updateStreaks();
@@ -720,6 +730,9 @@ async function handleButtonChoice(choice, tabId) {
     }
   }
   await chrome.storage.local.set({ sessions });
+
+  // Clear overlay tracking for this tab
+  if (tabId) overlayActiveTabs.delete(tabId);
 
   // If nevermind, close the tab
   if (choice.buttonType === 'nevermind' && tabId) {
