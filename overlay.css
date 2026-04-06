@@ -1,0 +1,222 @@
+/* Jag - Overlay Styles */
+/* Calm, minimal, slightly dark. Firm but not aggressive. */
+
+#jag-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2147483647;
+  background: #1a1a2e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, sans-serif;
+  color: #e0e0e0;
+  -webkit-font-smoothing: antialiased;
+  animation: jag-fade-in 0.3s ease-out;
+}
+
+@keyframes jag-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.jag-container {
+  max-width: 560px;
+  width: 90%;
+  text-align: center;
+  padding: 2rem;
+}
+
+/* Header / Logo */
+.jag-header {
+  margin-bottom: 2.5rem;
+}
+
+.jag-logo {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: lowercase;
+  color: #5a5a7a;
+}
+
+/* Awareness line - the most important element */
+.jag-awareness {
+  font-size: 1.6rem;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #f0f0f0;
+  margin-bottom: 2.5rem;
+  letter-spacing: -0.01em;
+}
+
+/* Stats row */
+.jag-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+}
+
+.jag-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.jag-stat-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #c8b6ff;
+  font-variant-numeric: tabular-nums;
+}
+
+.jag-stat-unit {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: #8888aa;
+}
+
+.jag-stat-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #6a6a8a;
+}
+
+.jag-stat-divider {
+  width: 1px;
+  height: 2rem;
+  background: #2a2a4a;
+}
+
+/* Buttons */
+.jag-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.jag-btn {
+  display: block;
+  width: 100%;
+  max-width: 340px;
+  padding: 0.85rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+.jag-btn:hover {
+  transform: translateY(-1px);
+}
+
+.jag-btn:active {
+  transform: translateY(0);
+}
+
+/* Nevermind - the hero button, most prominent and attractive */
+.jag-btn-nevermind {
+  background: linear-gradient(135deg, #c8b6ff 0%, #a78bfa 100%);
+  color: #1a1a2e;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 1rem 1.5rem;
+  order: -1; /* Push to top */
+}
+
+.jag-btn-nevermind:hover {
+  background: linear-gradient(135deg, #d4c5ff 0%, #b49dff 100%);
+  box-shadow: 0 4px 20px rgba(167, 139, 250, 0.3);
+}
+
+/* Work button - functional, subdued */
+.jag-btn-work {
+  background: #2a2a4a;
+  color: #a0a0c0;
+  border: 1px solid #3a3a5a;
+}
+
+.jag-btn-work:hover {
+  background: #333358;
+  color: #c0c0e0;
+}
+
+/* Browse button - least attractive, most friction */
+.jag-btn-browse {
+  background: transparent;
+  color: #6a6a8a;
+  border: 1px solid #2a2a4a;
+}
+
+.jag-btn-browse:hover {
+  background: #22223a;
+  color: #8888aa;
+}
+
+.jag-btn-timer {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 400;
+  opacity: 0.6;
+  margin-top: 0.15rem;
+}
+
+/* Timer display */
+.jag-timer-display {
+  text-align: center;
+  animation: jag-fade-in 0.3s ease-out;
+}
+
+.jag-timer-text {
+  font-size: 3.5rem;
+  font-weight: 300;
+  color: #c8b6ff;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.02em;
+}
+
+.jag-timer-bar-container {
+  width: 100%;
+  max-width: 340px;
+  height: 3px;
+  background: #2a2a4a;
+  border-radius: 2px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.jag-timer-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #c8b6ff, #a78bfa);
+  border-radius: 2px;
+  transition: width 1s linear;
+  width: 0%;
+}
+
+/* Farewell message */
+.jag-farewell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.jag-farewell-text {
+  font-size: 1.5rem;
+  color: #c8b6ff;
+  font-weight: 400;
+}

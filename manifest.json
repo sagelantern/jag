@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Jag",
+  "version": "0.1.0",
+  "description": "AI-powered awareness interrupts for mindful browsing",
+  "permissions": [
+    "tabs",
+    "storage",
+    "webNavigation",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "http://localhost:18789/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["overlay.css"],
+      "run_at": "document_start"
+    }
+  ],
+  "options_page": "options.html",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jag Settings</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      padding: 2rem;
+      max-width: 680px;
+      margin: 0 auto;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #f0f0f0;
+    }
+
+    h1 span {
+      color: #c8b6ff;
+    }
+
+    .subtitle {
+      color: #6a6a8a;
+      font-size: 0.85rem;
+      margin-bottom: 2rem;
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #c8b6ff;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.75rem;
+    }
+
+    .section {
+      background: #22223a;
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      color: #8888aa;
+      margin-bottom: 0.3rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="time"],
+    select {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      background: #2a2a4a;
+      border: 1px solid #3a3a5a;
+      border-radius: 6px;
+      color: #e0e0e0;
+      font-size: 0.9rem;
+      font-family: inherit;
+      margin-bottom: 0.75rem;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #c8b6ff;
+    }
+
+    .row {
+      display: flex;
+      gap: 0.75rem;
+      align-items: end;
+    }
+
+    .row > * {
+      flex: 1;
+    }
+
+    button {
+      padding: 0.55rem 1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: #c8b6ff;
+      color: #1a1a2e;
+    }
+
+    .btn-primary:hover {
+      background: #d4c5ff;
+    }
+
+    .btn-danger {
+      background: transparent;
+      color: #ff6b6b;
+      border: 1px solid #3a2a2a;
+      padding: 0.3rem 0.6rem;
+      font-size: 0.75rem;
+    }
+
+    .btn-danger:hover {
+      background: #2a1a1a;
+    }
+
+    .btn-secondary {
+      background: #2a2a4a;
+      color: #a0a0c0;
+      border: 1px solid #3a3a5a;
+    }
+
+    .btn-secondary:hover {
+      background: #333358;
+    }
+
+    /* Sites list */
+    .site-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #2a2a4a;
+    }
+
+    .site-item:last-child {
+      border-bottom: none;
+    }
+
+    .site-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .site-pattern {
+      font-weight: 500;
+      color: #f0f0f0;
+      font-size: 0.9rem;
+    }
+
+    .site-category {
+      font-size: 0.7rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      background: #2a2a4a;
+      color: #8888aa;
+    }
+
+    .site-category.never_work { color: #ff8a8a; background: #2a1a1a; }
+    .site-category.sometimes_work { color: #ffd280; background: #2a2a1a; }
+
+    #sites-list {
+      margin-bottom: 1rem;
+    }
+
+    .add-site-form {
+      display: flex;
+      gap: 0.5rem;
+      align-items: end;
+    }
+
+    .add-site-form input { margin-bottom: 0; }
+    .add-site-form select { margin-bottom: 0; }
+
+    /* Days checkboxes */
+    .days-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .day-check {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .day-check input[type="checkbox"] {
+      accent-color: #c8b6ff;
+    }
+
+    .day-check label {
+      margin-bottom: 0;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    /* Presence times */
+    .presence-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #2a2a4a;
+      flex-wrap: wrap;
+    }
+
+    .presence-item:last-child { border-bottom: none; }
+
+    .presence-name { font-weight: 500; color: #f0f0f0; font-size: 0.85rem; min-width: 100px; }
+    .presence-time { color: #8888aa; font-size: 0.8rem; }
+
+    /* Save status */
+    .save-status {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: #c8b6ff;
+      color: #1a1a2e;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-weight: 500;
+      font-size: 0.85rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    .save-status.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <h1><span>jag</span> settings</h1>
+  <p class="subtitle">Configure your mindful browsing experience</p>
+
+  <!-- Flagged Sites -->
+  <div class="section">
+    <h2>Flagged Sites</h2>
+    <div id="sites-list"></div>
+    <div class="add-site-form">
+      <div style="flex: 2">
+        <label for="new-site-pattern">URL pattern</label>
+        <input type="text" id="new-site-pattern" placeholder="e.g., reddit.com">
+      </div>
+      <div style="flex: 1">
+        <label for="new-site-category">Category</label>
+        <select id="new-site-category">
+          <option value="never_work">Never work</option>
+          <option value="sometimes_work">Sometimes work</option>
+        </select>
+      </div>
+      <button class="btn-primary" id="add-site-btn">Add</button>
+    </div>
+  </div>
+
+  <!-- Work Hours -->
+  <div class="section">
+    <h2>Work Hours</h2>
+    <div class="row">
+      <div>
+        <label for="work-start">Start</label>
+        <input type="time" id="work-start">
+      </div>
+      <div>
+        <label for="work-end">End</label>
+        <input type="time" id="work-end">
+      </div>
+    </div>
+    <label>Days</label>
+    <div class="days-row" id="work-days">
+      <div class="day-check"><input type="checkbox" id="wd-0" value="0"><label for="wd-0">Sun</label></div>
+      <div class="day-check"><input type="checkbox" id="wd-1" value="1"><label for="wd-1">Mon</label></div>
+      <div class="day-check"><input type="checkbox" id="wd-2" value="2"><label for="wd-2">Tue</label></div>
+      <div class="day-check"><input type="checkbox" id="wd-3" value="3"><label for="wd-3">Wed</label></div>
+      <div class="day-check"><input type="checkbox" id="wd-4" value="4"><label for="wd-4">Thu</label></div>
+      <div class="day-check"><input type="checkbox" id="wd-5" value="5"><label for="wd-5">Fri</label></div>
+      <div class="day-check"><input type="checkbox" id="wd-6" value="6"><label for="wd-6">Sat</label></div>
+    </div>
+  </div>
+
+  <!-- Presence Times -->
+  <div class="section">
+    <h2>Presence Times</h2>
+    <div id="presence-list"></div>
+    <div class="row" style="margin-top: 0.75rem;">
+      <div>
+        <label for="new-presence-name">Name</label>
+        <input type="text" id="new-presence-name" placeholder="e.g., Family Dinner">
+      </div>
+      <div>
+        <label for="new-presence-start">Start</label>
+        <input type="time" id="new-presence-start">
+      </div>
+      <div>
+        <label for="new-presence-end">End</label>
+        <input type="time" id="new-presence-end">
+      </div>
+      <button class="btn-primary" id="add-presence-btn" style="align-self: end;">Add</button>
+    </div>
+  </div>
+
+  <!-- Streak & Timer -->
+  <div class="section">
+    <h2>Streak & Timer</h2>
+    <div class="row">
+      <div>
+        <label for="daily-target">Daily target (minutes)</label>
+        <input type="number" id="daily-target" min="1" max="480">
+      </div>
+      <div>
+        <label for="rolling-window">Rolling window (minutes)</label>
+        <input type="number" id="rolling-window" min="15" max="720">
+      </div>
+    </div>
+  </div>
+
+  <!-- API Config -->
+  <div class="section">
+    <h2>OpenClaw API</h2>
+    <label for="api-endpoint">Endpoint URL</label>
+    <input type="text" id="api-endpoint" placeholder="http://localhost:18789/v1/responses">
+    <label for="api-token">Bearer Token (optional)</label>
+    <input type="text" id="api-token" placeholder="Leave blank if not needed">
+  </div>
+
+  <button class="btn-primary" id="save-btn" style="width: 100%; padding: 0.75rem; font-size: 1rem;">Save Settings</button>
+
+  <div class="save-status" id="save-status">Settings saved ✓</div>
+
+  <script src="options.js"></script>
+</body>
+</html>
