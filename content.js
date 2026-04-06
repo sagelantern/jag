@@ -10,8 +10,8 @@
   let lastActivity = Date.now();
   let chatHistory = [];
 
-  // Immediately check if this is a flagged site and hide the page
-  // This runs at document_start before the page renders
+  // Immediately inject a full-screen blocker before any page content renders
+  // This runs at document_start — fastest possible interception
   (async function earlyBlock() {
     try {
       const data = await chrome.storage.local.get(['sites']);
@@ -19,13 +19,13 @@
       const hostname = window.location.hostname;
       const isFlagged = sites.some(s => s.enabled && hostname.includes(s.pattern));
       if (isFlagged) {
-        // Hide page content immediately
-        document.documentElement.style.visibility = 'hidden';
-        document.documentElement.style.background = '#1a1a2e';
+        // Inject a covering div immediately
+        const blocker = document.createElement('div');
+        blocker.id = 'jag-early-blocker';
+        blocker.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:2147483646;background:#1a1a2e;';
+        (document.documentElement || document.body || document).appendChild(blocker);
       }
-    } catch (e) {
-      // Storage not ready yet, will be handled by message listener
-    }
+    } catch (e) {}
   })();
 
   // Listen for messages from background
@@ -382,9 +382,11 @@
     overlayActive = false;
     document.removeEventListener('keydown', blockKeys, true);
     document.documentElement.style.overflow = '';
-    document.documentElement.style.visibility = '';
     document.body.style.overflow = '';
     overlay.remove();
+    // Remove early blocker if still present
+    const blocker = document.getElementById('jag-early-blocker');
+    if (blocker) blocker.remove();
 
     lastActivity = Date.now();
     startIdleMonitoring();
