@@ -71,10 +71,15 @@ function matchesFlaggedSite(url, sites) {
   }
 }
 
-// Get open count within rolling window
+// Get open count within rolling window (only counts sessions where user actually opened the site)
 function getOpenCount(sessions, sitePattern, windowMinutes) {
   const cutoff = Date.now() - windowMinutes * 60 * 1000;
-  return sessions.filter(s => s.site === sitePattern && s.timestamp > cutoff).length;
+  return sessions.filter(s =>
+    s.site === sitePattern &&
+    s.timestamp > cutoff &&
+    s.buttonChoice !== null &&
+    s.buttonChoice !== 'nevermind'
+  ).length;
 }
 
 // Check if current time is within work hours
@@ -218,13 +223,18 @@ async function getAwarenessFromAPI(site, openCount, config, streaks) {
   const day = now.toLocaleDateString('en-US', { weekday: 'long' });
   const windowHours = Math.round(config.rollingWindowMinutes / 60 * 10) / 10;
 
-  const prompt = `Context: The user is opening ${site.pattern} for the ${ordinal(openCount)} time in the last ${windowHours} hours. It is ${time} on ${day}. Their streak is ${streaks.current} days. They've spent ${Math.round(streaks.dailyMinutes)} minutes on distracting sites today (target: under ${config.dailyTargetMinutes} min). ${isWorkHours(config) ? 'It is work hours.' : 'It is outside work hours.'} ${isPresenceTime(config) ? 'It is a designated presence time (family/meditation).' : ''}
+  const prompt = `[JAG BROWSER EXTENSION REQUEST - respond with ONLY JSON, no other text]
 
-Generate ONE short awareness line (1 sentence, max 15 words). Be direct, specific to the moment, and vary your approach. Some options: name what they're avoiding, state the opportunity cost, note the pattern, ask what they actually need. Never use generic phrases like "you set these rules" or "is this intentional." Never lecture.
+Yash just opened ${site.pattern} for the ${ordinal(openCount)} time in the last ${windowHours} hours. It is ${time} on ${day}. His Jag streak is ${streaks.current} days. He's spent ${Math.round(streaks.dailyMinutes)} min on distracting sites today (target: under ${config.dailyTargetMinutes} min). ${isWorkHours(config) ? 'It is work hours.' : 'It is outside work hours.'} ${isPresenceTime(config) ? 'It is a designated presence time (family/meditation).' : ''}
 
-Also return buttons. "I don't need this" (nevermind, timer 0) is always included. "Let me browse" (browse) is always included with the appropriate timer. Only include "I need this for work" (work) during work hours for sometimes_work sites.
+Use what you know about Yash: his calendar today, his priorities, his rituals, his patterns, what he should be doing right now. Generate ONE awareness line (max 15 words) that is deeply personal and specific to THIS moment. Reference real things: his meditation practice, Sohum, Shivantika, his workout, Kindred, Pioneer Fund, whatever is actually relevant right now. Don't be generic. Don't lecture. State what's true.
 
-Return as JSON: {"awareness": string, "buttons": [{"label": string, "type": "work"|"browse"|"nevermind", "timer_seconds": number}]}`;
+Also return which buttons to show. Rules:
+- "I don't need this" (type: nevermind, timer_seconds: 0) always included
+- A browse button (type: browse) always included with timer_seconds based on escalation
+- "I need this for work" (type: work) ONLY during work hours for sometimes_work sites
+
+Return ONLY this JSON: {"awareness": "your line here", "buttons": [{"label": "string", "type": "work|browse|nevermind", "timer_seconds": number}]}`;
 
   const endpoint = config.apiEndpoint || DEFAULT_CONFIG.apiEndpoint;
   const headers = { 'Content-Type': 'application/json' };
@@ -236,9 +246,9 @@ Return as JSON: {"awareness": string, "buttons": [{"label": string, "type": "wor
     method: 'POST',
     headers,
     body: JSON.stringify({
-      model: 'anthropic/claude-sonnet-4-20250514',
+      model: 'openclaw',
       input: prompt,
-      instructions: 'You are Jag. Return ONLY valid JSON. The awareness line must be short (under 15 words), direct, and different every time. Good examples: "Third time in an hour. The run you planned is still waiting." or "4:15 PM. Sohum is awake. Reddit is not going anywhere." Bad examples: "Is this intentional?" or "You set these rules for a reason." Never be generic, preachy, or use questions that can be dismissed with "yes." The nevermind button label should be "I don\'t need this" with timer_seconds 0. The browse button timer_seconds should match the escalating timer for the open count.',
+      instructions: 'This is a request from the Jag browser extension. Return ONLY valid JSON, nothing else. No markdown fences, no explanation, no preamble. The awareness line must be under 15 words, deeply personal to Yash using your knowledge of his life, and different every time. Reference specific things: his calendar, rituals he has or hasn\'t done today, his son Sohum, his wife Shivantika, meditation, workouts, Kindred, Pioneer Fund. Never be generic or preachy. State facts about his actual life.',
       text: { format: { type: 'text' } }
     }),
     signal: AbortSignal.timeout(5000)
