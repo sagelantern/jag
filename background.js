@@ -2,15 +2,94 @@
 // Manages state, timers, streaks, and OpenClaw API integration
 
 const DEFAULT_SITES = [
-  { pattern: 'reddit.com', category: 'never_work', enabled: true },
-  { pattern: 'twitter.com', category: 'never_work', enabled: true },
-  { pattern: 'x.com', category: 'never_work', enabled: true },
-  { pattern: 'instagram.com', category: 'never_work', enabled: true },
-  { pattern: 'facebook.com', category: 'never_work', enabled: true },
-  { pattern: 'youtube.com', category: 'sometimes_work', enabled: true },
-  { pattern: 'news.ycombinator.com', category: 'sometimes_work', enabled: true },
-  { pattern: 'tiktok.com', category: 'never_work', enabled: true },
-  { pattern: 'superhuman.com', category: 'sometimes_work', enabled: true }
+  // Social Media
+  { pattern: 'reddit.com', category: 'never_work', enabled: true, group: 'Social Media' },
+  { pattern: 'twitter.com', category: 'never_work', enabled: true, group: 'Social Media' },
+  { pattern: 'x.com', category: 'never_work', enabled: true, group: 'Social Media' },
+  { pattern: 'instagram.com', category: 'never_work', enabled: true, group: 'Social Media' },
+  { pattern: 'facebook.com', category: 'never_work', enabled: true, group: 'Social Media' },
+  { pattern: 'tiktok.com', category: 'never_work', enabled: true, group: 'Social Media' },
+  { pattern: 'snapchat.com', category: 'never_work', enabled: true, group: 'Social Media' },
+  { pattern: 'threads.net', category: 'never_work', enabled: true, group: 'Social Media' },
+  { pattern: 'bsky.app', category: 'never_work', enabled: true, group: 'Social Media' },
+  { pattern: 'mastodon.social', category: 'never_work', enabled: true, group: 'Social Media' },
+  { pattern: 'linkedin.com', category: 'sometimes_work', enabled: false, group: 'Social Media' },
+  { pattern: 'pinterest.com', category: 'never_work', enabled: true, group: 'Social Media' },
+  { pattern: 'tumblr.com', category: 'never_work', enabled: true, group: 'Social Media' },
+
+  // Video & Streaming
+  { pattern: 'youtube.com', category: 'sometimes_work', enabled: true, group: 'Video & Streaming' },
+  { pattern: 'netflix.com', category: 'never_work', enabled: true, group: 'Video & Streaming' },
+  { pattern: 'twitch.tv', category: 'never_work', enabled: true, group: 'Video & Streaming' },
+  { pattern: 'disneyplus.com', category: 'never_work', enabled: true, group: 'Video & Streaming' },
+  { pattern: 'hulu.com', category: 'never_work', enabled: true, group: 'Video & Streaming' },
+  { pattern: 'max.com', category: 'never_work', enabled: true, group: 'Video & Streaming' },
+  { pattern: 'primevideo.com', category: 'never_work', enabled: true, group: 'Video & Streaming' },
+  { pattern: 'peacocktv.com', category: 'never_work', enabled: true, group: 'Video & Streaming' },
+  { pattern: 'vimeo.com', category: 'sometimes_work', enabled: false, group: 'Video & Streaming' },
+  { pattern: 'dailymotion.com', category: 'never_work', enabled: true, group: 'Video & Streaming' },
+  { pattern: 'rumble.com', category: 'never_work', enabled: true, group: 'Video & Streaming' },
+
+  // News & Media
+  { pattern: 'cnn.com', category: 'never_work', enabled: true, group: 'News & Media' },
+  { pattern: 'bbc.com', category: 'never_work', enabled: true, group: 'News & Media' },
+  { pattern: 'nytimes.com', category: 'never_work', enabled: true, group: 'News & Media' },
+  { pattern: 'theguardian.com', category: 'never_work', enabled: true, group: 'News & Media' },
+  { pattern: 'washingtonpost.com', category: 'never_work', enabled: true, group: 'News & Media' },
+  { pattern: 'foxnews.com', category: 'never_work', enabled: true, group: 'News & Media' },
+  { pattern: 'msnbc.com', category: 'never_work', enabled: true, group: 'News & Media' },
+  { pattern: 'apnews.com', category: 'never_work', enabled: true, group: 'News & Media' },
+  { pattern: 'reuters.com', category: 'never_work', enabled: true, group: 'News & Media' },
+  { pattern: 'buzzfeed.com', category: 'never_work', enabled: true, group: 'News & Media' },
+  { pattern: 'huffpost.com', category: 'never_work', enabled: true, group: 'News & Media' },
+  { pattern: 'vice.com', category: 'never_work', enabled: true, group: 'News & Media' },
+  { pattern: 'dailymail.co.uk', category: 'never_work', enabled: true, group: 'News & Media' },
+  { pattern: 'news.google.com', category: 'never_work', enabled: true, group: 'News & Media' },
+
+  // Forums & Communities
+  { pattern: 'news.ycombinator.com', category: 'sometimes_work', enabled: true, group: 'Forums & Communities' },
+  { pattern: 'quora.com', category: 'never_work', enabled: true, group: 'Forums & Communities' },
+  { pattern: 'discord.com', category: 'sometimes_work', enabled: false, group: 'Forums & Communities' },
+  { pattern: '4chan.org', category: 'never_work', enabled: true, group: 'Forums & Communities' },
+  { pattern: 'lemmy.world', category: 'never_work', enabled: true, group: 'Forums & Communities' },
+  { pattern: 'slashdot.org', category: 'never_work', enabled: true, group: 'Forums & Communities' },
+
+  // Shopping
+  { pattern: 'amazon.com', category: 'never_work', enabled: true, group: 'Shopping' },
+  { pattern: 'ebay.com', category: 'never_work', enabled: true, group: 'Shopping' },
+  { pattern: 'walmart.com', category: 'never_work', enabled: true, group: 'Shopping' },
+  { pattern: 'target.com', category: 'never_work', enabled: true, group: 'Shopping' },
+  { pattern: 'etsy.com', category: 'never_work', enabled: true, group: 'Shopping' },
+  { pattern: 'bestbuy.com', category: 'never_work', enabled: true, group: 'Shopping' },
+  { pattern: 'aliexpress.com', category: 'never_work', enabled: true, group: 'Shopping' },
+  { pattern: 'lululemon.com', category: 'never_work', enabled: true, group: 'Shopping' },
+  { pattern: 'nike.com', category: 'never_work', enabled: true, group: 'Shopping' },
+  { pattern: 'zara.com', category: 'never_work', enabled: true, group: 'Shopping' },
+  { pattern: 'airbnb.com', category: 'never_work', enabled: true, group: 'Shopping' },
+  { pattern: 'zillow.com', category: 'never_work', enabled: true, group: 'Shopping' },
+  { pattern: 'realtor.com', category: 'never_work', enabled: true, group: 'Shopping' },
+
+  // Email (sometimes work)
+  { pattern: 'mail.google.com', category: 'sometimes_work', enabled: true, group: 'Email' },
+  { pattern: 'superhuman.com', category: 'sometimes_work', enabled: true, group: 'Email' },
+  { pattern: 'outlook.live.com', category: 'sometimes_work', enabled: false, group: 'Email' },
+  { pattern: 'mail.yahoo.com', category: 'sometimes_work', enabled: false, group: 'Email' },
+
+  // Entertainment & Sports
+  { pattern: 'espn.com', category: 'never_work', enabled: true, group: 'Entertainment & Sports' },
+  { pattern: 'bleacherreport.com', category: 'never_work', enabled: true, group: 'Entertainment & Sports' },
+  { pattern: 'thescore.com', category: 'never_work', enabled: true, group: 'Entertainment & Sports' },
+  { pattern: 'spotify.com', category: 'never_work', enabled: false, group: 'Entertainment & Sports' },
+  { pattern: 'imdb.com', category: 'never_work', enabled: true, group: 'Entertainment & Sports' },
+  { pattern: 'rottentomatoes.com', category: 'never_work', enabled: true, group: 'Entertainment & Sports' },
+  { pattern: 'twitch.tv', category: 'never_work', enabled: true, group: 'Entertainment & Sports' },
+
+  // Travel & Lifestyle
+  { pattern: 'tripadvisor.com', category: 'never_work', enabled: true, group: 'Travel & Lifestyle' },
+  { pattern: 'booking.com', category: 'never_work', enabled: true, group: 'Travel & Lifestyle' },
+  { pattern: 'hotels.com', category: 'never_work', enabled: true, group: 'Travel & Lifestyle' },
+  { pattern: 'expedia.com', category: 'never_work', enabled: true, group: 'Travel & Lifestyle' },
+  { pattern: 'yelp.com', category: 'never_work', enabled: true, group: 'Travel & Lifestyle' },
 ];
 
 const DEFAULT_CONFIG = {

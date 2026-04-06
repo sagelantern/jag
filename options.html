@@ -1,343 +1,259 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Jag Settings</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, sans-serif;
       background: #1a1a2e;
       color: #e0e0e0;
       padding: 2rem;
-      max-width: 680px;
+      max-width: 720px;
       margin: 0 auto;
-      -webkit-font-smoothing: antialiased;
     }
-
     h1 {
       font-size: 1.5rem;
       font-weight: 600;
-      margin-bottom: 0.5rem;
-      color: #f0f0f0;
-    }
-
-    h1 span {
       color: #c8b6ff;
+      margin-bottom: 0.5rem;
     }
-
+    h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #e0e0e0;
+      margin: 2rem 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid #2a2a4a;
+    }
     .subtitle {
-      color: #6a6a8a;
       font-size: 0.85rem;
+      color: #6a6a8a;
       margin-bottom: 2rem;
     }
 
-    h2 {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 1rem;
-      color: #c8b6ff;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-size: 0.75rem;
+    /* Site groups */
+    .site-group {
+      margin-bottom: 1.5rem;
     }
-
-    .section {
-      background: #22223a;
-      border-radius: 10px;
-      padding: 1.25rem;
-      margin-bottom: 1.25rem;
-    }
-
-    label {
-      display: block;
-      font-size: 0.8rem;
-      color: #8888aa;
-      margin-bottom: 0.3rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    input[type="text"],
-    input[type="number"],
-    input[type="time"],
-    select {
-      width: 100%;
-      padding: 0.6rem 0.75rem;
-      background: #2a2a4a;
-      border: 1px solid #3a3a5a;
-      border-radius: 6px;
-      color: #e0e0e0;
-      font-size: 0.9rem;
-      font-family: inherit;
-      margin-bottom: 0.75rem;
-    }
-
-    input:focus, select:focus {
-      outline: none;
-      border-color: #c8b6ff;
-    }
-
-    .row {
-      display: flex;
-      gap: 0.75rem;
-      align-items: end;
-    }
-
-    .row > * {
-      flex: 1;
-    }
-
-    button {
-      padding: 0.55rem 1rem;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      font-weight: 500;
-      font-family: inherit;
-      transition: all 0.15s;
-    }
-
-    .btn-primary {
-      background: #c8b6ff;
-      color: #1a1a2e;
-    }
-
-    .btn-primary:hover {
-      background: #d4c5ff;
-    }
-
-    .btn-danger {
-      background: transparent;
-      color: #ff6b6b;
-      border: 1px solid #3a2a2a;
-      padding: 0.3rem 0.6rem;
-      font-size: 0.75rem;
-    }
-
-    .btn-danger:hover {
-      background: #2a1a1a;
-    }
-
-    .btn-secondary {
-      background: #2a2a4a;
-      color: #a0a0c0;
-      border: 1px solid #3a3a5a;
-    }
-
-    .btn-secondary:hover {
-      background: #333358;
-    }
-
-    /* Sites list */
-    .site-item {
+    .group-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0.5rem 0;
-      border-bottom: 1px solid #2a2a4a;
+      padding: 0.6rem 0;
+      cursor: pointer;
+      user-select: none;
     }
-
-    .site-item:last-child {
-      border-bottom: none;
-    }
-
-    .site-info {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .site-pattern {
-      font-weight: 500;
-      color: #f0f0f0;
+    .group-name {
       font-size: 0.9rem;
+      font-weight: 600;
+      color: #c8b6ff;
     }
-
-    .site-category {
-      font-size: 0.7rem;
-      padding: 0.15rem 0.4rem;
+    .group-count {
+      font-size: 0.75rem;
+      color: #6a6a8a;
+    }
+    .group-toggle-all {
+      font-size: 0.75rem;
+      color: #6a6a8a;
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      border: 1px solid #3a3a5a;
       border-radius: 4px;
-      background: #2a2a4a;
-      color: #8888aa;
+      background: transparent;
+      font-family: inherit;
     }
-
-    .site-category.never_work { color: #ff8a8a; background: #2a1a1a; }
-    .site-category.sometimes_work { color: #ffd280; background: #2a2a1a; }
-
-    #sites-list {
-      margin-bottom: 1rem;
+    .group-toggle-all:hover {
+      color: #c8b6ff;
+      border-color: #c8b6ff;
     }
-
-    .add-site-form {
+    .site-list {
       display: flex;
-      gap: 0.5rem;
-      align-items: end;
-    }
-
-    .add-site-form input { margin-bottom: 0; }
-    .add-site-form select { margin-bottom: 0; }
-
-    /* Days checkboxes */
-    .days-row {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 0.75rem;
       flex-wrap: wrap;
-    }
-
-    .day-check {
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-    }
-
-    .day-check input[type="checkbox"] {
-      accent-color: #c8b6ff;
-    }
-
-    .day-check label {
-      margin-bottom: 0;
-      text-transform: none;
-      letter-spacing: 0;
-    }
-
-    /* Presence times */
-    .presence-item {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
+      gap: 0.4rem;
       padding: 0.5rem 0;
-      border-bottom: 1px solid #2a2a4a;
-      flex-wrap: wrap;
+    }
+    .site-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.7rem;
+      border-radius: 16px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      user-select: none;
+      border: 1px solid transparent;
+    }
+    .site-chip.enabled {
+      background: #2a2a4a;
+      color: #c8b6ff;
+      border-color: #3a3a5a;
+    }
+    .site-chip.disabled {
+      background: transparent;
+      color: #4a4a6a;
+      border-color: #2a2a3e;
+    }
+    .site-chip:hover {
+      border-color: #c8b6ff;
+    }
+    .site-chip .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+    .site-chip.enabled .dot { background: #c8b6ff; }
+    .site-chip.disabled .dot { background: #3a3a5a; }
+    .site-chip .category-tag {
+      font-size: 0.65rem;
+      color: #5a5a7a;
+      margin-left: 0.2rem;
     }
 
-    .presence-item:last-child { border-bottom: none; }
-
-    .presence-name { font-weight: 500; color: #f0f0f0; font-size: 0.85rem; min-width: 100px; }
-    .presence-time { color: #8888aa; font-size: 0.8rem; }
-
-    /* Save status */
-    .save-status {
-      position: fixed;
-      bottom: 1.5rem;
-      right: 1.5rem;
+    /* Add custom site */
+    .add-site-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .add-site-row input {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #3a3a5a;
+      border-radius: 6px;
+      background: #22223a;
+      color: #e8e8f0;
+      font-size: 0.85rem;
+      font-family: inherit;
+      outline: none;
+    }
+    .add-site-row input:focus { border-color: #c8b6ff; }
+    .add-site-row input::placeholder { color: #5a5a7a; }
+    .add-site-row select {
+      padding: 0.5rem;
+      border: 1px solid #3a3a5a;
+      border-radius: 6px;
+      background: #22223a;
+      color: #e8e8f0;
+      font-size: 0.85rem;
+      font-family: inherit;
+    }
+    .add-site-row button {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
       background: #c8b6ff;
       color: #1a1a2e;
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
-      font-weight: 500;
-      font-size: 0.85rem;
-      opacity: 0;
-      transition: opacity 0.3s;
-      pointer-events: none;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
     }
 
-    .save-status.visible {
-      opacity: 1;
+    /* Config sections */
+    .config-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .config-field label {
+      display: block;
+      font-size: 0.8rem;
+      color: #8a8aaa;
+      margin-bottom: 0.3rem;
+    }
+    .config-field input {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #3a3a5a;
+      border-radius: 6px;
+      background: #22223a;
+      color: #e8e8f0;
+      font-size: 0.85rem;
+      font-family: inherit;
+      outline: none;
+    }
+    .config-field input:focus { border-color: #c8b6ff; }
+
+    /* Save */
+    .save-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid #2a2a4a;
+    }
+    #save-btn {
+      padding: 0.7rem 2rem;
+      border: none;
+      border-radius: 8px;
+      background: #c8b6ff;
+      color: #1a1a2e;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    #save-status {
+      font-size: 0.85rem;
+      color: #6a6a8a;
     }
   </style>
 </head>
 <body>
-  <h1><span>jag</span> settings</h1>
-  <p class="subtitle">Configure your mindful browsing experience</p>
+  <h1>jag</h1>
+  <p class="subtitle">Protect your attention. Configure which sites require justification.</p>
 
-  <!-- Flagged Sites -->
-  <div class="section">
-    <h2>Flagged Sites</h2>
-    <div id="sites-list"></div>
-    <div class="add-site-form">
-      <div style="flex: 2">
-        <label for="new-site-pattern">URL pattern</label>
-        <input type="text" id="new-site-pattern" placeholder="e.g., reddit.com">
-      </div>
-      <div style="flex: 1">
-        <label for="new-site-category">Category</label>
-        <select id="new-site-category">
-          <option value="never_work">Never work</option>
-          <option value="sometimes_work">Sometimes work</option>
-        </select>
-      </div>
-      <button class="btn-primary" id="add-site-btn">Add</button>
+  <h2>Flagged Sites</h2>
+  <div id="site-groups"></div>
+
+  <div class="add-site-row">
+    <input type="text" id="new-site" placeholder="Add a site (e.g., example.com)" />
+    <select id="new-category">
+      <option value="never_work">Never work</option>
+      <option value="sometimes_work">Sometimes work</option>
+    </select>
+    <button id="add-site-btn">Add</button>
+  </div>
+
+  <h2>Schedule</h2>
+  <div class="config-grid">
+    <div class="config-field">
+      <label>Work hours start</label>
+      <input type="time" id="work-start" />
+    </div>
+    <div class="config-field">
+      <label>Work hours end</label>
+      <input type="time" id="work-end" />
+    </div>
+    <div class="config-field">
+      <label>Daily target (minutes)</label>
+      <input type="number" id="daily-target" min="0" max="480" />
+    </div>
+    <div class="config-field">
+      <label>Rolling window (minutes)</label>
+      <input type="number" id="rolling-window" min="30" max="480" />
     </div>
   </div>
 
-  <!-- Work Hours -->
-  <div class="section">
-    <h2>Work Hours</h2>
-    <div class="row">
-      <div>
-        <label for="work-start">Start</label>
-        <input type="time" id="work-start">
-      </div>
-      <div>
-        <label for="work-end">End</label>
-        <input type="time" id="work-end">
-      </div>
+  <h2>API Connection</h2>
+  <div class="config-grid">
+    <div class="config-field" style="grid-column: 1 / -1">
+      <label>OpenClaw endpoint</label>
+      <input type="text" id="api-endpoint" />
     </div>
-    <label>Days</label>
-    <div class="days-row" id="work-days">
-      <div class="day-check"><input type="checkbox" id="wd-0" value="0"><label for="wd-0">Sun</label></div>
-      <div class="day-check"><input type="checkbox" id="wd-1" value="1"><label for="wd-1">Mon</label></div>
-      <div class="day-check"><input type="checkbox" id="wd-2" value="2"><label for="wd-2">Tue</label></div>
-      <div class="day-check"><input type="checkbox" id="wd-3" value="3"><label for="wd-3">Wed</label></div>
-      <div class="day-check"><input type="checkbox" id="wd-4" value="4"><label for="wd-4">Thu</label></div>
-      <div class="day-check"><input type="checkbox" id="wd-5" value="5"><label for="wd-5">Fri</label></div>
-      <div class="day-check"><input type="checkbox" id="wd-6" value="6"><label for="wd-6">Sat</label></div>
+    <div class="config-field" style="grid-column: 1 / -1">
+      <label>Bearer token</label>
+      <input type="password" id="api-token" />
     </div>
   </div>
 
-  <!-- Presence Times -->
-  <div class="section">
-    <h2>Presence Times</h2>
-    <div id="presence-list"></div>
-    <div class="row" style="margin-top: 0.75rem;">
-      <div>
-        <label for="new-presence-name">Name</label>
-        <input type="text" id="new-presence-name" placeholder="e.g., Family Dinner">
-      </div>
-      <div>
-        <label for="new-presence-start">Start</label>
-        <input type="time" id="new-presence-start">
-      </div>
-      <div>
-        <label for="new-presence-end">End</label>
-        <input type="time" id="new-presence-end">
-      </div>
-      <button class="btn-primary" id="add-presence-btn" style="align-self: end;">Add</button>
-    </div>
+  <div class="save-row">
+    <button id="save-btn">Save</button>
+    <span id="save-status"></span>
   </div>
-
-  <!-- Streak & Timer -->
-  <div class="section">
-    <h2>Streak & Timer</h2>
-    <div class="row">
-      <div>
-        <label for="daily-target">Daily target (minutes)</label>
-        <input type="number" id="daily-target" min="1" max="480">
-      </div>
-      <div>
-        <label for="rolling-window">Rolling window (minutes)</label>
-        <input type="number" id="rolling-window" min="15" max="720">
-      </div>
-    </div>
-  </div>
-
-  <!-- API Config -->
-  <div class="section">
-    <h2>OpenClaw API</h2>
-    <label for="api-endpoint">Endpoint URL</label>
-    <input type="text" id="api-endpoint" placeholder="http://localhost:18789/v1/responses">
-    <label for="api-token">Bearer Token (optional)</label>
-    <input type="text" id="api-token" placeholder="Leave blank if not needed">
-  </div>
-
-  <button class="btn-primary" id="save-btn" style="width: 100%; padding: 0.75rem; font-size: 1rem;">Save Settings</button>
-
-  <div class="save-status" id="save-status">Settings saved ✓</div>
 
   <script src="options.js"></script>
 </body>

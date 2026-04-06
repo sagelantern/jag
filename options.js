@@ -1,5 +1,3 @@
-// Jag - Options Page
-
 const DEFAULT_CONFIG = {
   workHours: { start: '09:00', end: '17:00', days: [1, 2, 3, 4, 5] },
   presenceTimes: [
@@ -9,131 +7,126 @@ const DEFAULT_CONFIG = {
   dailyTargetMinutes: 30,
   apiEndpoint: 'http://100.78.25.83:18789/v1/responses',
   apiBearerToken: '0649cd7eea0f60e90ea7d20588659f299e8b291904b5cc59',
-  timerBase: [5, 15, 30, 60, 120]
 };
-
-const DEFAULT_SITES = [
-  { pattern: 'reddit.com', category: 'never_work', enabled: true },
-  { pattern: 'twitter.com', category: 'never_work', enabled: true },
-  { pattern: 'x.com', category: 'never_work', enabled: true },
-  { pattern: 'instagram.com', category: 'never_work', enabled: true },
-  { pattern: 'facebook.com', category: 'never_work', enabled: true },
-  { pattern: 'youtube.com', category: 'sometimes_work', enabled: true },
-  { pattern: 'news.ycombinator.com', category: 'sometimes_work', enabled: true },
-  { pattern: 'tiktok.com', category: 'never_work', enabled: true }
-];
 
 let sites = [];
 let config = {};
 
 // Load settings
-async function loadSettings() {
+async function load() {
   const data = await chrome.storage.local.get(['sites', 'config']);
-  sites = data.sites || [...DEFAULT_SITES];
-  config = data.config || { ...DEFAULT_CONFIG };
+  sites = data.sites || [];
+  config = data.config || DEFAULT_CONFIG;
 
-  renderSites();
-  renderPresenceTimes();
+  renderSiteGroups();
+  renderConfig();
+}
 
-  document.getElementById('work-start').value = config.workHours.start;
-  document.getElementById('work-end').value = config.workHours.end;
+function renderSiteGroups() {
+  const container = document.getElementById('site-groups');
+  container.innerHTML = '';
 
-  // Work days checkboxes
-  for (let i = 0; i < 7; i++) {
-    document.getElementById(`wd-${i}`).checked = config.workHours.days.includes(i);
+  // Group sites
+  const groups = {};
+  sites.forEach((site, index) => {
+    const group = site.group || 'Other';
+    if (!groups[group]) groups[group] = [];
+    groups[group].push({ ...site, _index: index });
+  });
+
+  for (const [groupName, groupSites] of Object.entries(groups)) {
+    const enabledCount = groupSites.filter(s => s.enabled).length;
+
+    const div = document.createElement('div');
+    div.className = 'site-group';
+    div.innerHTML = `
+      <div class="group-header">
+        <span>
+          <span class="group-name">${groupName}</span>
+          <span class="group-count">${enabledCount}/${groupSites.length} active</span>
+        </span>
+        <button class="group-toggle-all" data-group="${groupName}">
+          ${enabledCount === groupSites.length ? 'Disable all' : 'Enable all'}
+        </button>
+      </div>
+      <div class="site-list">
+        ${groupSites.map(s => `
+          <div class="site-chip ${s.enabled ? 'enabled' : 'disabled'}" data-index="${s._index}">
+            <span class="dot"></span>
+            <span>${s.pattern}</span>
+            ${s.category === 'sometimes_work' ? '<span class="category-tag">work ok</span>' : ''}
+          </div>
+        `).join('')}
+      </div>
+    `;
+    container.appendChild(div);
   }
 
-  document.getElementById('daily-target').value = config.dailyTargetMinutes;
-  document.getElementById('rolling-window').value = config.rollingWindowMinutes;
-  document.getElementById('api-endpoint').value = config.apiEndpoint;
+  // Chip click handlers
+  container.querySelectorAll('.site-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const idx = parseInt(chip.dataset.index);
+      sites[idx].enabled = !sites[idx].enabled;
+      renderSiteGroups();
+    });
+  });
+
+  // Group toggle handlers
+  container.querySelectorAll('.group-toggle-all').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const groupName = btn.dataset.group;
+      const groupSites = sites.filter(s => (s.group || 'Other') === groupName);
+      const allEnabled = groupSites.every(s => s.enabled);
+      sites.forEach(s => {
+        if ((s.group || 'Other') === groupName) {
+          s.enabled = !allEnabled;
+        }
+      });
+      renderSiteGroups();
+    });
+  });
+}
+
+function renderConfig() {
+  document.getElementById('work-start').value = config.workHours?.start || '09:00';
+  document.getElementById('work-end').value = config.workHours?.end || '17:00';
+  document.getElementById('daily-target').value = config.dailyTargetMinutes || 30;
+  document.getElementById('rolling-window').value = config.rollingWindowMinutes || 120;
+  document.getElementById('api-endpoint').value = config.apiEndpoint || DEFAULT_CONFIG.apiEndpoint;
   document.getElementById('api-token').value = config.apiBearerToken || '';
-}
-
-// Render sites list
-function renderSites() {
-  const container = document.getElementById('sites-list');
-  container.innerHTML = sites.map((site, i) => `
-    <div class="site-item">
-      <div class="site-info">
-        <span class="site-pattern">${escapeHTML(site.pattern)}</span>
-        <span class="site-category ${site.category}">${site.category.replace('_', ' ')}</span>
-      </div>
-      <button class="btn-danger" data-remove-site="${i}">Remove</button>
-    </div>
-  `).join('');
-
-  // Attach remove handlers
-  container.querySelectorAll('[data-remove-site]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const idx = parseInt(btn.dataset.removeSite);
-      sites.splice(idx, 1);
-      renderSites();
-    });
-  });
-}
-
-// Render presence times
-function renderPresenceTimes() {
-  const container = document.getElementById('presence-list');
-  const times = config.presenceTimes || [];
-  container.innerHTML = times.map((pt, i) => `
-    <div class="presence-item">
-      <span class="presence-name">${escapeHTML(pt.name)}</span>
-      <span class="presence-time">${pt.start} – ${pt.end}</span>
-      <button class="btn-danger" data-remove-presence="${i}">Remove</button>
-    </div>
-  `).join('');
-
-  container.querySelectorAll('[data-remove-presence]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const idx = parseInt(btn.dataset.removePresence);
-      config.presenceTimes.splice(idx, 1);
-      renderPresenceTimes();
-    });
-  });
 }
 
 // Add site
 document.getElementById('add-site-btn').addEventListener('click', () => {
-  const pattern = document.getElementById('new-site-pattern').value.trim();
-  const category = document.getElementById('new-site-category').value;
+  const input = document.getElementById('new-site');
+  const category = document.getElementById('new-category').value;
+  const pattern = input.value.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+
   if (!pattern) return;
+  if (sites.some(s => s.pattern === pattern)) {
+    alert('Site already exists');
+    return;
+  }
 
-  sites.push({ pattern, category, enabled: true });
-  document.getElementById('new-site-pattern').value = '';
-  renderSites();
-});
+  sites.push({
+    pattern,
+    category,
+    enabled: true,
+    group: 'Custom'
+  });
 
-// Add presence time
-document.getElementById('add-presence-btn').addEventListener('click', () => {
-  const name = document.getElementById('new-presence-name').value.trim();
-  const start = document.getElementById('new-presence-start').value;
-  const end = document.getElementById('new-presence-end').value;
-  if (!name || !start || !end) return;
-
-  if (!config.presenceTimes) config.presenceTimes = [];
-  config.presenceTimes.push({ name, start, end, days: [0, 1, 2, 3, 4, 5, 6] });
-
-  document.getElementById('new-presence-name').value = '';
-  document.getElementById('new-presence-start').value = '';
-  document.getElementById('new-presence-end').value = '';
-  renderPresenceTimes();
+  input.value = '';
+  renderSiteGroups();
 });
 
 // Save
 document.getElementById('save-btn').addEventListener('click', async () => {
-  // Gather work days
-  const workDays = [];
-  for (let i = 0; i < 7; i++) {
-    if (document.getElementById(`wd-${i}`).checked) workDays.push(i);
-  }
-
   config.workHours = {
+    ...config.workHours,
     start: document.getElementById('work-start').value,
     end: document.getElementById('work-end').value,
-    days: workDays
   };
-
   config.dailyTargetMinutes = parseInt(document.getElementById('daily-target').value) || 30;
   config.rollingWindowMinutes = parseInt(document.getElementById('rolling-window').value) || 120;
   config.apiEndpoint = document.getElementById('api-endpoint').value.trim() || DEFAULT_CONFIG.apiEndpoint;
@@ -141,17 +134,15 @@ document.getElementById('save-btn').addEventListener('click', async () => {
 
   await chrome.storage.local.set({ sites, config });
 
-  // Show save confirmation
   const status = document.getElementById('save-status');
-  status.classList.add('visible');
-  setTimeout(() => status.classList.remove('visible'), 2000);
+  status.textContent = 'Saved';
+  status.style.color = '#c8b6ff';
+  setTimeout(() => { status.textContent = ''; }, 2000);
 });
 
-function escapeHTML(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
+// Enter key on add site input
+document.getElementById('new-site').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('add-site-btn').click();
+});
 
-// Init
-loadSettings();
+load();
