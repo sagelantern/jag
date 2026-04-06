@@ -9,6 +9,7 @@
   height: 100vh;
   z-index: 2147483647;
   background: #1a1a2e;
+  visibility: visible !important;
   display: flex;
   align-items: center;
   justify-content: center;
