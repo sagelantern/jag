@@ -402,11 +402,13 @@ chrome.webNavigation.onCommitted.addListener(async (details) => {
   // Try API first, fall back to local templates
   let awareness, buttons;
   try {
+    console.log('Jag: Calling API at', config.apiEndpoint, 'token:', config.apiBearerToken ? config.apiBearerToken.substring(0, 8) + '...' : 'NONE');
     const apiResult = await getAwarenessFromAPI(matchedSite, openCount, config, streaks);
+    console.log('Jag: API success! Awareness:', apiResult.awareness);
     awareness = apiResult.awareness;
     buttons = apiResult.buttons;
   } catch (err) {
-    console.log('Jag: API unavailable, using fallback. Error:', err.message, 'Token set:', !!config.apiBearerToken, 'Endpoint:', config.apiEndpoint);
+    console.error('Jag: API FAILED. Error:', err.message, 'Token set:', !!config.apiBearerToken, 'Endpoint:', config.apiEndpoint);
     awareness = generateFallbackAwareness(matchedSite.pattern, openCount, config.rollingWindowMinutes, streaks.current);
     buttons = generateFallbackButtons(matchedSite, openCount, config);
   }
