@@ -7,7 +7,7 @@ const DEFAULT_CONFIG = {
   ],
   rollingWindowMinutes: 120,
   dailyTargetMinutes: 30,
-  apiEndpoint: 'http://localhost:18789/v1/responses',
+  apiEndpoint: 'http://100.78.25.83:18789/v1/responses',
   apiBearerToken: '0649cd7eea0f60e90ea7d20588659f299e8b291904b5cc59',
   timerBase: [5, 15, 30, 60, 120]
 };

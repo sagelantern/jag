@@ -10,7 +10,8 @@
     "activeTab"
   ],
   "host_permissions": [
-    "http://localhost:18789/*"
+    "http://localhost:18789/*",
+    "http://100.78.25.83:18789/*"
   ],
   "background": {
     "service_worker": "background.js"
