@@ -1,5 +1,5 @@
 /* Jag - Overlay Styles */
-/* Calm, minimal, dark. Firm but not aggressive. */
+/* Conversational gatekeeper */
 
 #jag-overlay {
   position: fixed;
@@ -24,15 +24,21 @@
 }
 
 .jag-container {
-  max-width: 560px;
+  max-width: 480px;
   width: 90%;
-  text-align: center;
-  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
 }
 
-/* Header / Logo */
+/* Header */
 .jag-header {
-  margin-bottom: 2.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #2a2a4a;
 }
 
 .jag-logo {
@@ -40,137 +46,161 @@
   font-weight: 600;
   letter-spacing: 0.3em;
   text-transform: lowercase;
-  color: #5a5a7a;
+  color: #c8b6ff;
 }
 
-/* Awareness line - the hero element */
-.jag-awareness {
-  font-size: 1.8rem;
-  line-height: 1.45;
-  font-weight: 400;
-  color: #f0f0f0;
-  margin-bottom: 1.5rem;
-  letter-spacing: -0.01em;
-}
-
-/* Secondary meta line - streak + visit count */
 .jag-meta {
-  font-size: 0.8rem;
-  color: #6a6a8a;
-  letter-spacing: 0.05em;
-  margin-bottom: 3rem;
+  font-size: 0.75rem;
+  color: #5a5a7a;
+  letter-spacing: 0.03em;
 }
 
-/* Buttons */
-.jag-buttons {
+/* Chat area */
+.jag-chat {
+  flex: 1;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-right: 0.5rem;
+  max-height: 50vh;
 }
 
-.jag-btn {
-  display: block;
-  width: 100%;
-  max-width: 340px;
-  padding: 0.85rem 1.5rem;
+.jag-message {
+  display: flex;
+  max-width: 85%;
+  animation: jag-fade-in 0.2s ease-out;
+}
+
+.jag-message-agent {
+  align-self: flex-start;
+}
+
+.jag-message-user {
+  align-self: flex-end;
+}
+
+.jag-message-text {
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.jag-message-agent .jag-message-text {
+  background: #2a2a4a;
+  color: #e8e8f0;
+  border-bottom-left-radius: 4px;
+}
+
+.jag-message-user .jag-message-text {
+  background: #c8b6ff;
+  color: #1a1a2e;
+  border-bottom-right-radius: 4px;
+}
+
+/* Typing indicator */
+.jag-dots {
+  animation: jag-blink 1s infinite;
+  letter-spacing: 0.15em;
+}
+
+@keyframes jag-blink {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* Input area */
+.jag-input-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.jag-input-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.jag-input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid #3a3a5a;
+  border-radius: 8px;
+  background: #22223a;
+  color: #e8e8f0;
+  font-size: 0.95rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.jag-input:focus {
+  border-color: #c8b6ff;
+}
+
+.jag-input:disabled {
+  opacity: 0.5;
+}
+
+.jag-input::placeholder {
+  color: #5a5a7a;
+}
+
+.jag-send-btn {
+  padding: 0.75rem 1rem;
   border: none;
   border-radius: 8px;
-  font-size: 0.95rem;
+  background: #c8b6ff;
+  color: #1a1a2e;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.jag-send-btn:hover {
+  background: #d4c5ff;
+}
+
+/* Nevermind button */
+.jag-nevermind-btn {
+  width: 100%;
+  padding: 0.7rem;
+  border: 1px solid #3a3a5a;
+  border-radius: 8px;
+  background: transparent;
+  color: #c8b6ff;
+  font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
   font-family: inherit;
-  line-height: 1.4;
+  transition: all 0.2s;
 }
 
-.jag-btn:hover {
-  transform: translateY(-1px);
-}
-
-.jag-btn:active {
-  transform: translateY(0);
-}
-
-/* Nevermind - the hero button, most prominent */
-.jag-btn-nevermind {
-  background: linear-gradient(135deg, #c8b6ff 0%, #a78bfa 100%);
-  color: #1a1a2e;
-  font-weight: 600;
-  font-size: 1rem;
-  padding: 1rem 1.5rem;
-  order: -1;
-}
-
-.jag-btn-nevermind:hover {
-  background: linear-gradient(135deg, #d4c5ff 0%, #b49dff 100%);
-  box-shadow: 0 4px 20px rgba(167, 139, 250, 0.3);
-}
-
-/* Work button - functional, subdued */
-.jag-btn-work {
+.jag-nevermind-btn:hover {
   background: #2a2a4a;
-  color: #a0a0c0;
-  border: 1px solid #3a3a5a;
 }
 
-.jag-btn-work:hover {
-  background: #333358;
-  color: #c0c0e0;
-}
-
-/* Browse button - least attractive, honest label */
-.jag-btn-browse {
-  background: transparent;
-  color: #555570;
-  border: 1px solid #2a2a3e;
-  font-size: 0.85rem;
-}
-
-.jag-btn-browse:hover {
-  background: #22223a;
-  color: #7a7a9a;
-}
-
-.jag-btn-timer {
-  display: block;
-  font-size: 0.75rem;
-  font-weight: 400;
-  opacity: 0.6;
-  margin-top: 0.15rem;
-}
-
-/* Timer display */
-.jag-timer-display {
-  text-align: center;
-  animation: jag-fade-in 0.3s ease-out;
-}
-
-.jag-timer-text {
-  font-size: 3.5rem;
-  font-weight: 300;
-  color: #c8b6ff;
-  font-variant-numeric: tabular-nums;
-  margin-bottom: 1.5rem;
-  letter-spacing: -0.02em;
-}
-
-.jag-timer-bar-container {
+/* Proceed button - subdued, not the hero */
+.jag-proceed-btn {
   width: 100%;
-  max-width: 340px;
-  height: 3px;
+  padding: 0.7rem;
+  border: 1px solid #3a3a5a;
+  border-radius: 8px;
   background: #2a2a4a;
-  border-radius: 2px;
-  margin: 0 auto;
-  overflow: hidden;
+  color: #8a8aaa;
+  font-size: 0.85rem;
+  font-weight: 400;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
 }
 
-.jag-timer-bar {
-  height: 100%;
-  background: linear-gradient(90deg, #c8b6ff, #a78bfa);
-  border-radius: 2px;
-  transition: width 1s linear;
-  width: 0%;
+.jag-proceed-btn:hover {
+  background: #333358;
+  color: #a0a0c0;
 }
 
 /* Loading state */
@@ -193,16 +223,16 @@
   50% { opacity: 1; transform: scale(1.2); }
 }
 
-/* Farewell message */
-.jag-farewell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 200px;
+/* Scrollbar */
+.jag-chat::-webkit-scrollbar {
+  width: 4px;
 }
 
-.jag-farewell-text {
-  font-size: 1.5rem;
-  color: #c8b6ff;
-  font-weight: 400;
+.jag-chat::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.jag-chat::-webkit-scrollbar-thumb {
+  background: #3a3a5a;
+  border-radius: 2px;
 }

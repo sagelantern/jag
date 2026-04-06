@@ -1,5 +1,5 @@
 // Jag - Content Script
-// Renders full-page overlay and enforces timer
+// Conversational gatekeeper overlay
 
 (function () {
   'use strict';
@@ -8,6 +8,7 @@
   let currentData = null;
   let idleTimer = null;
   let lastActivity = Date.now();
+  let chatHistory = [];
 
   // Listen for messages from background
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -16,6 +17,7 @@
       sendResponse({ ok: true });
     } else if (message.type === 'JAG_SHOW_OVERLAY') {
       currentData = message.data;
+      chatHistory = [];
       showOverlay(message.data);
       sendResponse({ ok: true });
     }
@@ -28,19 +30,17 @@
   }
 
   function startIdleMonitoring() {
-    // Monitor mouse, keyboard, scroll activity
     ['mousemove', 'keydown', 'scroll', 'click', 'touchstart'].forEach(event => {
       document.addEventListener(event, resetIdleTimer, { passive: true });
     });
 
-    // Check every 10 seconds if user has been idle for 60+ seconds
     idleTimer = setInterval(() => {
       if (!overlayActive && currentData && (Date.now() - lastActivity) >= 60000) {
-        // User has been idle for 1+ minute on a flagged site, re-trigger overlay
         chrome.runtime.sendMessage({
           type: 'JAG_IDLE_RETRIGGER',
           data: { site: currentData.site, timestamp: Date.now() }
         });
+        chatHistory = [];
         showOverlay(currentData);
       }
     }, 10000);
@@ -56,7 +56,6 @@
     });
   }
 
-  // Show loading screen immediately while API loads
   function showLoadingOverlay() {
     if (overlayActive) return;
     overlayActive = true;
@@ -76,7 +75,6 @@
     `;
 
     overlay.addEventListener('click', (e) => e.stopPropagation());
-    overlay.addEventListener('keydown', (e) => e.stopPropagation());
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
 
@@ -92,31 +90,24 @@
   }
 
   function showOverlay(data) {
-    // If loading overlay exists, replace it. Otherwise create fresh.
     const existing = document.getElementById('jag-overlay');
     if (existing) {
       existing.innerHTML = buildOverlayHTML(data);
-      setupButtons(existing, data);
+      setupChat(existing, data);
       return;
     }
 
     overlayActive = true;
     stopIdleMonitoring();
 
-    // Create overlay container
     const overlay = document.createElement('div');
     overlay.id = 'jag-overlay';
     overlay.innerHTML = buildOverlayHTML(data);
 
-    // Prevent any interaction with the page beneath
     overlay.addEventListener('click', (e) => e.stopPropagation());
-    overlay.addEventListener('keydown', (e) => e.stopPropagation());
-
-    // Block scrolling
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
 
-    // Insert overlay
     if (document.body) {
       document.body.appendChild(overlay);
     } else {
@@ -125,10 +116,7 @@
       });
     }
 
-    // Attach button handlers
-    setupButtons(overlay, data);
-
-    // Block escape key and other dismiss attempts
+    setupChat(overlay, data);
     document.addEventListener('keydown', blockKeys, true);
   }
 
@@ -142,114 +130,213 @@
   }
 
   function buildOverlayHTML(data) {
-    const { awareness, buttons, streak, openCount, site, windowMinutes } = data;
+    const { awareness, streak, openCount } = data;
 
     return `
       <div class="jag-container">
         <div class="jag-header">
           <span class="jag-logo">jag</span>
+          <span class="jag-meta">Day ${streak.current}${streak.current > 0 ? ' streak' : ''} · Visit #${openCount} today</span>
         </div>
 
-        <div class="jag-awareness">
-          ${escapeHTML(awareness)}
-        </div>
-
-        <div class="jag-meta">
-          Day ${streak.current}${streak.current > 0 ? ' streak' : ''} · Visit #${openCount} today
-        </div>
-
-        <div class="jag-buttons" id="jag-buttons">
-          ${buttons.map((btn, i) => `
-            <button class="jag-btn jag-btn-${btn.type}" data-index="${i}" data-type="${btn.type}" data-timer="${btn.timer_seconds}">
-              ${escapeHTML(btn.label)}
-              ${btn.timer_seconds > 0 ? `<span class="jag-btn-timer">${formatTimer(btn.timer_seconds)} wait</span>` : ''}
-            </button>
-          `).join('')}
-        </div>
-
-        <div class="jag-timer-display" id="jag-timer-display" style="display: none;">
-          <div class="jag-timer-text" id="jag-timer-text"></div>
-          <div class="jag-timer-bar-container">
-            <div class="jag-timer-bar" id="jag-timer-bar"></div>
+        <div class="jag-chat" id="jag-chat">
+          <div class="jag-message jag-message-agent">
+            <div class="jag-message-text">${escapeHTML(awareness)}</div>
           </div>
+          <div class="jag-message jag-message-agent">
+            <div class="jag-message-text">Why do you need to open this right now?</div>
+          </div>
+        </div>
+
+        <div class="jag-input-area" id="jag-input-area">
+          <div class="jag-input-row">
+            <input type="text" id="jag-input" class="jag-input" placeholder="Type your reason..." autocomplete="off" />
+            <button id="jag-send" class="jag-send-btn">→</button>
+          </div>
+          <button id="jag-nevermind" class="jag-nevermind-btn">I don't need this</button>
         </div>
       </div>
     `;
   }
 
-  function formatTimer(seconds) {
-    if (seconds >= 60) {
-      const min = Math.floor(seconds / 60);
-      const sec = seconds % 60;
-      return sec > 0 ? `${min}m ${sec}s` : `${min}m`;
-    }
-    return `${seconds}s`;
-  }
+  function setupChat(overlay, data) {
+    const input = overlay.querySelector('#jag-input');
+    const sendBtn = overlay.querySelector('#jag-send');
+    const nevermindBtn = overlay.querySelector('#jag-nevermind');
+    const chatDiv = overlay.querySelector('#jag-chat');
 
-  function setupButtons(overlay, data) {
-    const buttons = overlay.querySelectorAll('.jag-btn');
-    buttons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const type = btn.dataset.type;
-        const timerSeconds = parseInt(btn.dataset.timer, 10) || 0;
+    // Focus input
+    setTimeout(() => input && input.focus(), 100);
 
-        // Report choice to background
-        chrome.runtime.sendMessage({
-          type: 'JAG_BUTTON_CHOICE',
-          data: {
-            site: data.site,
-            buttonType: type,
-            timerSeconds: timerSeconds,
-            timestamp: Date.now()
-          }
-        });
+    // Send on Enter
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        submitReason(overlay, data);
+      }
+    });
 
-        if (type === 'nevermind') {
-          const container = overlay.querySelector('.jag-container');
-          container.innerHTML = `
-            <div class="jag-farewell">
-              <div class="jag-farewell-text">Good choice.</div>
-            </div>
-          `;
-          return;
-        }
+    sendBtn.addEventListener('click', () => submitReason(overlay, data));
 
-        // Start timer countdown
-        if (timerSeconds > 0) {
-          startTimer(overlay, timerSeconds, data);
-        } else {
-          removeOverlay(overlay);
+    nevermindBtn.addEventListener('click', () => {
+      chrome.runtime.sendMessage({
+        type: 'JAG_BUTTON_CHOICE',
+        data: {
+          site: data.site,
+          buttonType: 'nevermind',
+          timerSeconds: 0,
+          timestamp: Date.now()
         }
       });
+
+      chatDiv.innerHTML += `
+        <div class="jag-message jag-message-agent">
+          <div class="jag-message-text">Good choice.</div>
+        </div>
+      `;
+      overlay.querySelector('#jag-input-area').style.display = 'none';
+      setTimeout(() => {
+        // Tab will be closed by background
+      }, 800);
     });
   }
 
-  function startTimer(overlay, totalSeconds, data) {
-    const buttonsDiv = overlay.querySelector('#jag-buttons');
-    const timerDisplay = overlay.querySelector('#jag-timer-display');
-    const timerText = overlay.querySelector('#jag-timer-text');
-    const timerBar = overlay.querySelector('#jag-timer-bar');
+  async function submitReason(overlay, data) {
+    const input = overlay.querySelector('#jag-input');
+    const chatDiv = overlay.querySelector('#jag-chat');
+    const inputArea = overlay.querySelector('#jag-input-area');
+    const reason = input.value.trim();
 
-    buttonsDiv.style.display = 'none';
-    timerDisplay.style.display = 'block';
+    if (!reason) return;
 
-    let remaining = totalSeconds;
+    // Show user's message
+    chatDiv.innerHTML += `
+      <div class="jag-message jag-message-user">
+        <div class="jag-message-text">${escapeHTML(reason)}</div>
+      </div>
+    `;
+    input.value = '';
+    chatDiv.scrollTop = chatDiv.scrollHeight;
 
-    function updateTimer() {
-      timerText.textContent = formatTimer(remaining);
-      const progress = ((totalSeconds - remaining) / totalSeconds) * 100;
-      timerBar.style.width = `${progress}%`;
+    // Show typing indicator
+    chatDiv.innerHTML += `
+      <div class="jag-message jag-message-agent jag-typing" id="jag-typing">
+        <div class="jag-message-text"><span class="jag-dots">···</span></div>
+      </div>
+    `;
+    chatDiv.scrollTop = chatDiv.scrollHeight;
 
-      if (remaining <= 0) {
-        removeOverlay(overlay);
-        return;
+    // Disable input while waiting
+    input.disabled = true;
+
+    // Track conversation
+    chatHistory.push({ role: 'user', text: reason });
+
+    // Ask background to evaluate via API
+    try {
+      const response = await chrome.runtime.sendMessage({
+        type: 'JAG_EVALUATE_REASON',
+        data: {
+          site: data.site,
+          reason: reason,
+          chatHistory: chatHistory,
+          openCount: data.openCount,
+          streak: data.streak
+        }
+      });
+
+      // Remove typing indicator
+      const typing = overlay.querySelector('#jag-typing');
+      if (typing) typing.remove();
+
+      if (response && response.verdict === 'allow') {
+        // Valid reason — show response and proceed button
+        chatHistory.push({ role: 'agent', text: response.message });
+
+        chatDiv.innerHTML += `
+          <div class="jag-message jag-message-agent">
+            <div class="jag-message-text">${escapeHTML(response.message)}</div>
+          </div>
+        `;
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+
+        // Replace input with proceed button
+        inputArea.innerHTML = `
+          <button id="jag-proceed" class="jag-proceed-btn">Continue to ${escapeHTML(data.site)}</button>
+        `;
+
+        overlay.querySelector('#jag-proceed').addEventListener('click', () => {
+          chrome.runtime.sendMessage({
+            type: 'JAG_BUTTON_CHOICE',
+            data: {
+              site: data.site,
+              buttonType: 'browse',
+              timerSeconds: 0,
+              reason: chatHistory.map(m => m.text).join(' | '),
+              timestamp: Date.now()
+            }
+          });
+          removeOverlay(overlay);
+        });
+
+      } else if (response && response.verdict === 'deny') {
+        // Not valid — show response and only nevermind
+        chatHistory.push({ role: 'agent', text: response.message });
+
+        chatDiv.innerHTML += `
+          <div class="jag-message jag-message-agent">
+            <div class="jag-message-text">${escapeHTML(response.message)}</div>
+          </div>
+        `;
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+
+        inputArea.innerHTML = `
+          <button id="jag-close" class="jag-nevermind-btn">Close</button>
+        `;
+
+        overlay.querySelector('#jag-close').addEventListener('click', () => {
+          chrome.runtime.sendMessage({
+            type: 'JAG_BUTTON_CHOICE',
+            data: {
+              site: data.site,
+              buttonType: 'nevermind',
+              timerSeconds: 0,
+              timestamp: Date.now()
+            }
+          });
+          // Brief pause then close
+          setTimeout(() => {}, 500);
+        });
+
+      } else if (response && response.verdict === 'pushback') {
+        // Needs more justification
+        chatHistory.push({ role: 'agent', text: response.message });
+
+        chatDiv.innerHTML += `
+          <div class="jag-message jag-message-agent">
+            <div class="jag-message-text">${escapeHTML(response.message)}</div>
+          </div>
+        `;
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+
+        input.disabled = false;
+        input.focus();
       }
 
-      remaining--;
-      setTimeout(updateTimer, 1000);
-    }
+    } catch (err) {
+      console.error('Jag: Evaluate failed:', err);
+      // Remove typing indicator
+      const typing = overlay.querySelector('#jag-typing');
+      if (typing) typing.remove();
 
-    updateTimer();
+      // Fallback: allow through on error
+      inputArea.innerHTML = `
+        <button id="jag-proceed" class="jag-proceed-btn">Continue</button>
+      `;
+      overlay.querySelector('#jag-proceed').addEventListener('click', () => {
+        removeOverlay(overlay);
+      });
+    }
   }
 
   function removeOverlay(overlay) {
@@ -259,7 +346,6 @@
     document.body.style.overflow = '';
     overlay.remove();
 
-    // Start idle monitoring after overlay is dismissed
     lastActivity = Date.now();
     startIdleMonitoring();
   }

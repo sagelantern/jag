@@ -458,6 +458,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'JAG_BUTTON_CHOICE') {
     handleButtonChoice(message.data, sender.tab?.id);
     sendResponse({ ok: true });
+  } else if (message.type === 'JAG_EVALUATE_REASON') {
+    evaluateReason(message.data).then(result => {
+      sendResponse(result);
+    }).catch(err => {
+      console.error('Jag: Evaluate error:', err);
+      sendResponse({ verdict: 'allow', message: 'Go ahead.' });
+    });
+    return true; // async response
   } else if (message.type === 'JAG_GET_TIMER') {
     // Content script requests timer calculation
     (async () => {
@@ -470,6 +478,88 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   return false;
 });
+
+// Evaluate user's reason for opening a flagged site
+async function evaluateReason(data) {
+  const { site, reason, chatHistory, openCount, streak } = data;
+  const config = (await chrome.storage.local.get(['config'])).config || DEFAULT_CONFIG;
+
+  const now = new Date();
+  const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const day = now.toLocaleDateString('en-US', { weekday: 'long' });
+  const roundNum = chatHistory.filter(m => m.role === 'user').length;
+
+  const conversationSoFar = chatHistory.map(m =>
+    `${m.role === 'user' ? 'Yash' : 'Jag'}: ${m.text}`
+  ).join('\n');
+
+  const prompt = `[JAG GATEKEEPER - respond with ONLY JSON]
+
+Yash wants to open ${site}. It is ${time} on ${day}. Visit #${openCount} today. Streak: ${streak.current} days.
+${isPresenceTime(config) ? 'IMPORTANT: It is currently a designated presence time (family/meditation). Be very strict.' : ''}
+${!isWorkHours(config) ? 'It is outside work hours.' : 'It is work hours.'}
+
+Conversation so far:
+${conversationSoFar}
+
+Yash's latest reason: "${reason}"
+
+You are a strict but fair gatekeeper. Evaluate whether this is a legitimate, specific reason to use ${site} right now.
+
+ALLOW if: The reason is specific, actionable, and time-sensitive. Examples: "I need to reply to the Webflow thread about the pilot deadline" or "Checking if my PR got reviewed."
+
+PUSHBACK if: The reason is vague, could wait, or sounds like rationalization. Examples: "Just want to check something" or "I might have an important email" or "Just for a minute." Push back ONCE with a pointed question. This is round ${roundNum} of the conversation.
+
+DENY if: ${roundNum >= 2 ? 'This is round 2+. If the reason is still vague or unconvincing after pushback, deny.' : 'The reason is clearly just wanting to browse/scroll with no purpose, or it is presence time and there is no genuine emergency.'}
+
+Return ONLY this JSON:
+{"verdict": "allow" | "pushback" | "deny", "message": "your response to Yash (1-2 sentences, direct, no lectures)"}`;
+
+  const endpoint = config.apiEndpoint || DEFAULT_CONFIG.apiEndpoint;
+  const headers = {
+    'Content-Type': 'application/json',
+    'x-openclaw-model': 'anthropic/claude-sonnet-4-20250514'
+  };
+  if (config.apiBearerToken) {
+    headers['Authorization'] = `Bearer ${config.apiBearerToken}`;
+  }
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      model: 'openclaw',
+      input: prompt,
+      instructions: 'You are Jag, a strict gatekeeper. Return ONLY valid JSON with verdict and message. Be direct and honest. If the reason is vague, push back hard. If it is specific and real, allow it gracefully. Never be preachy. Keep messages under 2 sentences.',
+      stream: false
+    }),
+    signal: AbortSignal.timeout(20000)
+  });
+
+  if (!response.ok) throw new Error(`API returned ${response.status}`);
+
+  const apiData = await response.json();
+  let text = '';
+  if (apiData.output) {
+    for (const item of apiData.output) {
+      if (item.type === 'message' && item.content) {
+        for (const c of item.content) {
+          if (c.type === 'output_text') text = c.text;
+        }
+      }
+    }
+  }
+
+  const jsonStr = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+  const parsed = JSON.parse(jsonStr);
+
+  // Validate verdict
+  if (!['allow', 'pushback', 'deny'].includes(parsed.verdict)) {
+    parsed.verdict = 'pushback';
+  }
+
+  return parsed;
+}
 
 async function handleButtonChoice(choice, tabId) {
   const data = await chrome.storage.local.get(['sessions']);
