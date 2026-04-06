@@ -9,7 +9,8 @@ const DEFAULT_SITES = [
   { pattern: 'facebook.com', category: 'never_work', enabled: true },
   { pattern: 'youtube.com', category: 'sometimes_work', enabled: true },
   { pattern: 'news.ycombinator.com', category: 'sometimes_work', enabled: true },
-  { pattern: 'tiktok.com', category: 'never_work', enabled: true }
+  { pattern: 'tiktok.com', category: 'never_work', enabled: true },
+  { pattern: 'superhuman.com', category: 'sometimes_work', enabled: true }
 ];
 
 const DEFAULT_CONFIG = {
