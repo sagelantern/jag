@@ -482,12 +482,36 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // Evaluate user's reason for opening a flagged site
 async function evaluateReason(data) {
   const { site, reason, chatHistory, openCount, streak } = data;
-  const config = (await chrome.storage.local.get(['config'])).config || DEFAULT_CONFIG;
+  const storageData = await chrome.storage.local.get(['config', 'excuseHistory']);
+  const config = storageData.config || DEFAULT_CONFIG;
+  const excuseHistory = storageData.excuseHistory || [];
 
   const now = new Date();
   const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   const day = now.toLocaleDateString('en-US', { weekday: 'long' });
   const roundNum = chatHistory.filter(m => m.role === 'user').length;
+
+  // Save this excuse to history
+  excuseHistory.push({
+    site,
+    reason,
+    timestamp: Date.now(),
+    verdict: null // will be updated after evaluation
+  });
+  // Keep last 50 excuses
+  const trimmed = excuseHistory.slice(-50);
+  await chrome.storage.local.set({ excuseHistory: trimmed });
+
+  // Build recent excuse context (last 7 days, same site)
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const recentExcuses = trimmed
+    .filter(e => e.timestamp > weekAgo && e.site === site)
+    .slice(-10)
+    .map(e => {
+      const d = new Date(e.timestamp);
+      return `${d.toLocaleDateString('en-US', { weekday: 'short' })} ${d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}: "${e.reason}" → ${e.verdict || 'pending'}`;
+    })
+    .join('\n');
 
   const conversationSoFar = chatHistory.map(m =>
     `${m.role === 'user' ? 'Yash' : 'Jag'}: ${m.text}`
@@ -496,24 +520,26 @@ async function evaluateReason(data) {
   const prompt = `[JAG GATEKEEPER - respond with ONLY JSON]
 
 Yash wants to open ${site}. It is ${time} on ${day}. Visit #${openCount} today. Streak: ${streak.current} days.
-${isPresenceTime(config) ? 'IMPORTANT: It is currently a designated presence time (family/meditation). Be very strict.' : ''}
-${!isWorkHours(config) ? 'It is outside work hours.' : 'It is work hours.'}
+${isPresenceTime(config) ? 'IMPORTANT: It is currently a designated presence time (family/meditation). Be VERY strict. Only genuine emergencies pass.' : ''}
+${!isWorkHours(config) ? 'It is outside work hours. Be stricter about "work" excuses.' : 'It is work hours.'}
 
-Conversation so far:
+${recentExcuses ? `RECENT EXCUSES for ${site} (last 7 days):\n${recentExcuses}\n\nIf Yash is using the same or similar excuse repeatedly, call it out. Repeating an excuse doesn't make it more valid.` : ''}
+
+Current conversation:
 ${conversationSoFar}
 
 Yash's latest reason: "${reason}"
 
-You are a strict but fair gatekeeper. Evaluate whether this is a legitimate, specific reason to use ${site} right now.
+You are a STRICT gatekeeper. Your default is DENY. You only allow through if the reason is genuinely specific, actionable, and time-sensitive.
 
-ALLOW if: The reason is specific, actionable, and time-sensitive. Examples: "I need to reply to the Webflow thread about the pilot deadline" or "Checking if my PR got reviewed."
+ALLOW if: The reason names a specific task that must happen NOW on this site. Examples: "I need to reply to the Webflow pilot thread — deadline is tomorrow" or "Checking if the PR I submitted an hour ago got reviewed." Vague "work" reasons don't count.
 
-PUSHBACK if: The reason is vague, could wait, or sounds like rationalization. Examples: "Just want to check something" or "I might have an important email" or "Just for a minute." Push back ONCE with a pointed question. This is round ${roundNum} of the conversation.
+PUSHBACK if: Round ${roundNum} is 1 and the reason is vague, could wait, or sounds like rationalization. Examples: "Just want to check something," "I might have an important email," "Just for a minute," "Need it for work." Ask a specific follow-up question that forces them to be concrete.
 
-DENY if: ${roundNum >= 2 ? 'This is round 2+. If the reason is still vague or unconvincing after pushback, deny.' : 'The reason is clearly just wanting to browse/scroll with no purpose, or it is presence time and there is no genuine emergency.'}
+DENY if: ${roundNum >= 2 ? 'This is round 2+. If the reason is STILL vague or hand-wavy after you already pushed back, deny. No third chances.' : 'The reason is transparently just wanting to browse, OR it is presence time with no emergency, OR the excuse is clearly recycled BS.'}
 
 Return ONLY this JSON:
-{"verdict": "allow" | "pushback" | "deny", "message": "your response to Yash (1-2 sentences, direct, no lectures)"}`;
+{"verdict": "allow" | "pushback" | "deny", "message": "your response (1-2 sentences, direct, no lectures)"}`;
 
   const endpoint = config.apiEndpoint || DEFAULT_CONFIG.apiEndpoint;
   const headers = {
@@ -556,6 +582,14 @@ Return ONLY this JSON:
   // Validate verdict
   if (!['allow', 'pushback', 'deny'].includes(parsed.verdict)) {
     parsed.verdict = 'pushback';
+  }
+
+  // Update the most recent excuse with the verdict
+  const updated = await chrome.storage.local.get(['excuseHistory']);
+  const history = updated.excuseHistory || [];
+  if (history.length > 0) {
+    history[history.length - 1].verdict = parsed.verdict;
+    await chrome.storage.local.set({ excuseHistory: history });
   }
 
   return parsed;
