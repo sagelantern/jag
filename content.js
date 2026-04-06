@@ -10,6 +10,24 @@
   let lastActivity = Date.now();
   let chatHistory = [];
 
+  // Immediately check if this is a flagged site and hide the page
+  // This runs at document_start before the page renders
+  (async function earlyBlock() {
+    try {
+      const data = await chrome.storage.local.get(['sites']);
+      const sites = data.sites || [];
+      const hostname = window.location.hostname;
+      const isFlagged = sites.some(s => s.enabled && hostname.includes(s.pattern));
+      if (isFlagged) {
+        // Hide page content immediately
+        document.documentElement.style.visibility = 'hidden';
+        document.documentElement.style.background = '#1a1a2e';
+      }
+    } catch (e) {
+      // Storage not ready yet, will be handled by message listener
+    }
+  })();
+
   // Listen for messages from background
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'JAG_SHOW_LOADING') {
@@ -364,6 +382,7 @@
     overlayActive = false;
     document.removeEventListener('keydown', blockKeys, true);
     document.documentElement.style.overflow = '';
+    document.documentElement.style.visibility = '';
     document.body.style.overflow = '';
     overlay.remove();
 
