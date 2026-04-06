@@ -233,7 +233,17 @@ async function getAwarenessFromAPI(site, openCount, config, streaks) {
 
 Yash just opened ${site.pattern} for the ${ordinal(openCount)} time in the last ${windowHours} hours. It is ${time} on ${day}. His Jag streak is ${streaks.current} days. He's spent ${Math.round(streaks.dailyMinutes)} min on distracting sites today (target: under ${config.dailyTargetMinutes} min). ${isWorkHours(config) ? 'It is work hours.' : 'It is outside work hours.'} ${isPresenceTime(config) ? 'It is a designated presence time (family/meditation).' : ''}
 
-Use what you know about Yash: his calendar today, his priorities, his rituals, his patterns, what he should be doing right now. Generate ONE awareness line (max 15 words) that is deeply personal and specific to THIS moment. Reference real things: his meditation practice, Sohum, Shivantika, his workout, Kindred, Pioneer Fund, whatever is actually relevant right now. Don't be generic. Don't lecture. State what's true.
+Use what you know about Yash: his calendar today, his priorities, his rituals, his patterns, what he should be doing right now. Generate ONE awareness line (max 15 words) that is deeply personal and specific to THIS moment AND this specific site.
+
+The line must reference BOTH (a) something real from his life right now AND (b) what this particular site gives him vs what it costs him. For example:
+- Reddit: the dopamine scroll, the r/Gunners rabbit hole, the "just checking" that becomes 30 min
+- Email/Superhuman: the compulsive inbox refresh, checking without acting, the false sense of productivity
+- YouTube: the algorithm rabbit hole, "one more video," entertainment disguised as learning
+- Twitter/X: doomscrolling, hot takes that don't matter tomorrow, outrage dopamine
+- Instagram: comparison trap, mindless stories, lives that aren't his
+- HackerNews: intellectual procrastination dressed as staying informed
+
+Make it specific enough that it only makes sense for THIS site at THIS time. Vary your approach every time: sometimes name the pattern, sometimes name what he'd lose, sometimes name what's waiting for him instead. Never repeat yourself. Never be generic or preachy.
 
 Also return which buttons to show. Rules:
 - "I don't need this" (type: nevermind, timer_seconds: 0) always included
