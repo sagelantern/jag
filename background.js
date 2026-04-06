@@ -22,7 +22,7 @@ const DEFAULT_CONFIG = {
   dailyTargetMinutes: 30,
   apiEndpoint: 'http://localhost:18789/v1/responses',
   apiBearerToken: '',
-  timerBase: [5, 15, 30, 60, 120] // seconds per open count tier
+  timerBase: [10, 30, 60, 120, 180, 300] // seconds per open count tier (aggressive baseline)
 };
 
 const DEFAULT_STREAKS = {
@@ -104,20 +104,41 @@ function calculateTimer(openCount, buttonType, config, site) {
   const tierIndex = Math.min(openCount - 1, tiers.length - 1);
   let seconds = tiers[Math.max(0, tierIndex)];
 
-  // Modifiers
+  // Time-of-day adaptive multiplier
+  const hour = new Date().getHours();
+  if (hour >= 21 || hour < 6) {
+    // Late night (9pm-6am): most aggressive. You shouldn't be here.
+    seconds = Math.round(seconds * 3);
+  } else if (hour >= 18) {
+    // Evening (6pm-9pm): family time, wind down. Strong friction.
+    seconds = Math.round(seconds * 2);
+  } else if (hour < 9) {
+    // Early morning (6am-9am): protect the morning routine.
+    seconds = Math.round(seconds * 1.75);
+  }
+  // Work hours (9am-6pm): base timers apply
+
+  // Button type modifier
   if (buttonType === 'work') {
     seconds = Math.round(seconds * 0.5);
   }
 
+  // Outside configured work hours: additional bump
   if (!isWorkHours(config)) {
     seconds = Math.round(seconds * 1.5);
   }
 
+  // Presence time (family dinner, meditation): strongest friction
   if (isPresenceTime(config)) {
-    seconds = Math.round(seconds * 2);
+    seconds = Math.round(seconds * 2.5);
   }
 
-  return Math.max(seconds, 3); // minimum 3 seconds
+  // Never-work sites get a bump over sometimes-work
+  if (site && site.category === 'never_work') {
+    seconds = Math.round(seconds * 1.25);
+  }
+
+  return Math.max(seconds, 5); // minimum 5 seconds
 }
 
 // Generate fallback awareness line
