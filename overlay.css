@@ -173,6 +173,26 @@
   width: 0%;
 }
 
+/* Loading state */
+.jag-loading {
+  display: flex;
+  justify-content: center;
+  padding: 3rem 0;
+}
+
+.jag-loading-dot {
+  width: 8px;
+  height: 8px;
+  background: #c8b6ff;
+  border-radius: 50%;
+  animation: jag-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes jag-pulse {
+  0%, 100% { opacity: 0.2; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
 /* Farewell message */
 .jag-farewell {
   display: flex;

@@ -399,10 +399,17 @@ chrome.webNavigation.onCommitted.addListener(async (details) => {
   const prunedSessions = sessions.filter(s => s.timestamp > weekAgo);
   await chrome.storage.local.set({ sessions: prunedSessions });
 
+  // Show loading screen immediately
+  try {
+    await chrome.tabs.sendMessage(details.tabId, { type: 'JAG_SHOW_LOADING' });
+  } catch (e) {
+    console.log('Jag: Could not show loading screen:', e.message);
+  }
+
   // Try API first, fall back to local templates
   let awareness, buttons;
   try {
-    console.log('Jag: Calling API at', config.apiEndpoint, 'token:', config.apiBearerToken ? config.apiBearerToken.substring(0, 8) + '...' : 'NONE');
+    console.log('Jag: Calling API at', config.apiEndpoint);
     const apiResult = await getAwarenessFromAPI(matchedSite, openCount, config, streaks);
     console.log('Jag: API success! Awareness:', apiResult.awareness);
     awareness = apiResult.awareness;

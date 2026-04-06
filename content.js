@@ -9,9 +9,12 @@
   let idleTimer = null;
   let lastActivity = Date.now();
 
-  // Listen for overlay trigger from background
+  // Listen for messages from background
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type === 'JAG_SHOW_OVERLAY') {
+    if (message.type === 'JAG_SHOW_LOADING') {
+      showLoadingOverlay();
+      sendResponse({ ok: true });
+    } else if (message.type === 'JAG_SHOW_OVERLAY') {
       currentData = message.data;
       showOverlay(message.data);
       sendResponse({ ok: true });
@@ -53,8 +56,50 @@
     });
   }
 
-  function showOverlay(data) {
+  // Show loading screen immediately while API loads
+  function showLoadingOverlay() {
     if (overlayActive) return;
+    overlayActive = true;
+    stopIdleMonitoring();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'jag-overlay';
+    overlay.innerHTML = `
+      <div class="jag-container">
+        <div class="jag-header">
+          <span class="jag-logo">jag</span>
+        </div>
+        <div class="jag-loading">
+          <div class="jag-loading-dot"></div>
+        </div>
+      </div>
+    `;
+
+    overlay.addEventListener('click', (e) => e.stopPropagation());
+    overlay.addEventListener('keydown', (e) => e.stopPropagation());
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+
+    if (document.body) {
+      document.body.appendChild(overlay);
+    } else {
+      document.addEventListener('DOMContentLoaded', () => {
+        document.body.appendChild(overlay);
+      });
+    }
+
+    document.addEventListener('keydown', blockKeys, true);
+  }
+
+  function showOverlay(data) {
+    // If loading overlay exists, replace it. Otherwise create fresh.
+    const existing = document.getElementById('jag-overlay');
+    if (existing) {
+      existing.innerHTML = buildOverlayHTML(data);
+      setupButtons(existing, data);
+      return;
+    }
+
     overlayActive = true;
     stopIdleMonitoring();
 
