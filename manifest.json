@@ -1,17 +1,25 @@
 {
   "manifest_version": 3,
   "name": "Jag",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "AI-powered awareness interrupts for mindful browsing",
   "permissions": [
     "tabs",
     "storage",
     "webNavigation",
-    "activeTab"
+    "activeTab",
+    "alarms"
   ],
   "host_permissions": [
     "http://localhost:18789/*",
-    "http://100.78.25.83:18789/*"
+    "http://100.78.25.83:18789/*",
+    "https://lichess.org/*",
+    "https://*.stratechery.com/*",
+    "https://*.lennysnewsletter.com/*",
+    "https://*.firstround.com/*",
+    "https://*.aeon.co/*",
+    "https://*.lionsroar.com/*",
+    "https://*.bps-research-digest.blogspot.com/*"
   ],
   "background": {
     "service_worker": "background.js"

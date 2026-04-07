@@ -175,6 +175,25 @@
       outline: none;
     }
     .config-field input:focus { border-color: #c8b6ff; }
+    .config-field input[type="range"] {
+      padding: 0;
+      height: 28px;
+      background: transparent;
+      accent-color: #c8b6ff;
+      cursor: pointer;
+    }
+    .slider-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0.35rem;
+      font-size: 0.75rem;
+      color: #6a6a8a;
+    }
+    #compassion-value {
+      color: #c8b6ff;
+      font-weight: 600;
+    }
 
     /* Save */
     .save-row {
@@ -235,6 +254,19 @@
     <div class="config-field">
       <label>Rolling window (minutes)</label>
       <input type="number" id="rolling-window" min="30" max="480" />
+    </div>
+  </div>
+
+  <h2>Compassion-Strictness</h2>
+  <div class="config-grid">
+    <div class="config-field" style="grid-column: 1 / -1">
+      <label>Compassion level (0 = always allow, 100 = deny by default)</label>
+      <input type="range" id="compassion-level" min="0" max="100" step="1" />
+      <div class="slider-meta">
+        <span>Compassionate</span>
+        <span id="compassion-value">50</span>
+        <span>Strict</span>
+      </div>
     </div>
   </div>
 

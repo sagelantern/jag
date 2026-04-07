@@ -7,6 +7,7 @@ const DEFAULT_CONFIG = {
   dailyTargetMinutes: 30,
   apiEndpoint: 'http://100.78.25.83:18789/v1/responses',
   apiBearerToken: '0649cd7eea0f60e90ea7d20588659f299e8b291904b5cc59',
+  compassionLevel: 50,
 };
 
 let sites = [];
@@ -16,7 +17,7 @@ let config = {};
 async function load() {
   const data = await chrome.storage.local.get(['sites', 'config']);
   sites = data.sites || [];
-  config = data.config || DEFAULT_CONFIG;
+  config = { ...DEFAULT_CONFIG, ...(data.config || {}) };
 
   renderSiteGroups();
   renderConfig();
@@ -95,6 +96,15 @@ function renderConfig() {
   document.getElementById('rolling-window').value = config.rollingWindowMinutes || 120;
   document.getElementById('api-endpoint').value = config.apiEndpoint || DEFAULT_CONFIG.apiEndpoint;
   document.getElementById('api-token').value = config.apiBearerToken || '';
+  const compassionLevel = clampCompassion(config.compassionLevel);
+  document.getElementById('compassion-level').value = compassionLevel;
+  document.getElementById('compassion-value').textContent = String(compassionLevel);
+}
+
+function clampCompassion(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 50;
+  return Math.max(0, Math.min(100, Math.round(parsed)));
 }
 
 // Add site
@@ -131,6 +141,7 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   config.rollingWindowMinutes = parseInt(document.getElementById('rolling-window').value) || 120;
   config.apiEndpoint = document.getElementById('api-endpoint').value.trim() || DEFAULT_CONFIG.apiEndpoint;
   config.apiBearerToken = document.getElementById('api-token').value.trim();
+  config.compassionLevel = clampCompassion(document.getElementById('compassion-level').value);
 
   await chrome.storage.local.set({ sites, config });
 
@@ -143,6 +154,11 @@ document.getElementById('save-btn').addEventListener('click', async () => {
 // Enter key on add site input
 document.getElementById('new-site').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') document.getElementById('add-site-btn').click();
+});
+
+document.getElementById('compassion-level').addEventListener('input', (e) => {
+  const value = clampCompassion(e.target.value);
+  document.getElementById('compassion-value').textContent = String(value);
 });
 
 load();
